@@ -1,0 +1,107 @@
+import { Canvas, useFrame } from '@react-three/fiber'
+import { useRef, useState } from 'react'
+import type { Mesh } from 'three'
+
+function RotatingCar() {
+  const ref = useRef<Mesh>(null)
+  useFrame((_, delta) => {
+    if (ref.current) ref.current.rotation.y += delta * 0.4
+  })
+  return (
+    <mesh ref={ref} position={[0, -0.5, 0]}>
+      <boxGeometry args={[2, 0.8, 4]} />
+      <meshStandardMaterial color="#e63946" metalness={0.6} roughness={0.3} />
+    </mesh>
+  )
+}
+
+const btnBase: React.CSSProperties = {
+  pointerEvents: 'auto',
+  padding: '16px 48px',
+  fontSize: 'clamp(1rem, 3vw, 1.5rem)',
+  fontFamily: 'monospace',
+  fontWeight: 'bold',
+  color: '#fff',
+  border: '2px solid #e63946',
+  borderRadius: 8,
+  cursor: 'pointer',
+  transition: 'all 0.2s',
+  textTransform: 'uppercase',
+  letterSpacing: '0.15em',
+}
+
+function MenuButton({ label, onClick }: { label: string; onClick: () => void }) {
+  const [hovered, setHovered] = useState(false)
+  return (
+    <button
+      onClick={onClick}
+      onPointerEnter={() => setHovered(true)}
+      onPointerLeave={() => setHovered(false)}
+      style={{
+        ...btnBase,
+        background: hovered ? '#e63946' : 'rgba(230,57,70,0.3)',
+      }}
+    >
+      {label}
+    </button>
+  )
+}
+
+export function MainMenu({ onStart, onFreePlay }: { onStart: () => void; onFreePlay: () => void }) {
+  return (
+    <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+      <Canvas camera={{ position: [0, 3, 8], fov: 45 }}>
+        <color attach="background" args={['#0a0a1a']} />
+        <ambientLight intensity={0.3} />
+        <directionalLight position={[5, 5, 5]} intensity={1} />
+        <fog attach="fog" args={['#0a0a1a', 10, 20]} />
+        <RotatingCar />
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1, 0]}>
+          <planeGeometry args={[50, 50]} />
+          <meshStandardMaterial color="#1a1a2e" />
+        </mesh>
+      </Canvas>
+
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          pointerEvents: 'none',
+        }}
+      >
+        <h1
+          style={{
+            color: '#fff',
+            fontFamily: 'monospace',
+            fontSize: 'clamp(2rem, 6vw, 4rem)',
+            textShadow: '0 0 20px rgba(230,57,70,0.8)',
+            marginBottom: '0.5em',
+            letterSpacing: '0.1em',
+          }}
+        >
+          NO MAN'S LAND
+        </h1>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <MenuButton label="Start" onClick={onStart} />
+          <MenuButton label="Free Play" onClick={onFreePlay} />
+        </div>
+
+        <p
+          style={{
+            color: 'rgba(255,255,255,0.4)',
+            fontFamily: 'monospace',
+            fontSize: 'clamp(0.7rem, 2vw, 0.9rem)',
+            marginTop: '2em',
+          }}
+        >
+          WASD / Arrows / Touch to drive
+        </p>
+      </div>
+    </div>
+  )
+}

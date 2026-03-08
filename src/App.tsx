@@ -1,0 +1,66 @@
+import { useState } from 'react'
+import { Canvas } from '@react-three/fiber'
+import { Physics } from '@react-three/rapier'
+import { KeyboardControls } from '@react-three/drei'
+import { FreePlayTerrain } from './components/FreePlayTerrain'
+import { Car } from './components/Car'
+import { GameCamera } from './components/GameCamera'
+import { HUD } from './components/HUD'
+import { TouchControls } from './components/TouchControls'
+import { DebugOverlay } from './components/DebugOverlay'
+import { MainMenu } from './components/MainMenu'
+import { Level1 } from './levels/Level1'
+import { useTouchControls } from './hooks/useTouchControls'
+
+type GameMode = 'menu' | 'level' | 'freeplay'
+
+const keyboardMap = [
+  { name: 'forward', keys: ['ArrowUp', 'KeyW'] },
+  { name: 'backward', keys: ['ArrowDown', 'KeyS'] },
+  { name: 'left', keys: ['ArrowLeft', 'KeyA'] },
+  { name: 'right', keys: ['ArrowRight', 'KeyD'] },
+  { name: 'shoot', keys: ['Space'] },
+]
+
+export default function App() {
+  const [mode, setMode] = useState<GameMode>('menu')
+  const touch = useTouchControls()
+
+  if (mode === 'menu') {
+    return (
+      <MainMenu
+        onStart={() => setMode('level')}
+        onFreePlay={() => setMode('freeplay')}
+      />
+    )
+  }
+
+  return (
+    <KeyboardControls map={keyboardMap}>
+      <Canvas shadows>
+        <color attach="background" args={['#87CEEB']} />
+        <ambientLight intensity={0.5} />
+        <directionalLight
+          position={[50, 50, 25]}
+          intensity={1.5}
+          castShadow
+          shadow-mapSize={[2048, 2048]}
+          shadow-camera-far={200}
+          shadow-camera-left={-50}
+          shadow-camera-right={50}
+          shadow-camera-top={50}
+          shadow-camera-bottom={-50}
+        />
+        <fog attach="fog" args={['#87CEEB', 80, 150]} />
+        <Physics gravity={[0, -60, 0]}>
+          {mode === 'level' ? <Level1 /> : <FreePlayTerrain />}
+          <Car touchControls={touch.controls} />
+        </Physics>
+        <GameCamera touchControls={touch.controls} />
+      </Canvas>
+      <HUD />
+      <DebugOverlay />
+      <TouchControls handlers={touch.handlers} />
+    </KeyboardControls>
+  )
+}
