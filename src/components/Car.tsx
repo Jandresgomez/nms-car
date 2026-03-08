@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber'
 import { RigidBody, CuboidCollider, BallCollider, useRapier, type RapierRigidBody } from '@react-three/rapier'
 import { useKeyboardControls, useGLTF } from '@react-three/drei'
 import { Vector3, Quaternion } from 'three'
+import { Ray } from '@dimforge/rapier3d-compat'
 import type { MutableRefObject } from 'react'
 import type { TouchControlState } from '../hooks/useTouchControls'
 import { useDebugStore } from '../hooks/useDebugStore'
@@ -86,7 +87,7 @@ export function Car({ touchControls }: CarProps) {
       _worldPos.copy(wheel.offset).applyQuaternion(quat).add(_posVec)
       // Cast downward in world space
       const ray = world.castRay(
-        { origin: { x: _worldPos.x, y: _worldPos.y, z: _worldPos.z }, dir: { x: 0, y: -1, z: 0 } },
+        new Ray({ x: _worldPos.x, y: _worldPos.y, z: _worldPos.z }, { x: 0, y: -1, z: 0 }),
         WHEEL_RAY_LEN,
         true,
         undefined,
