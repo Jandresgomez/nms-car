@@ -119,7 +119,7 @@ export function FreePlayTerrain() {
     <>
       {/* Ground */}
       <RigidBody type="fixed" friction={0.5} restitution={0}>
-        <CuboidCollider args={[150, 0.1, 150]} position={[0, -0.1, 0]} />
+        <CuboidCollider args={[150, 5, 150]} position={[0, -5, 0]} />
         <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
           <planeGeometry args={[300, 300]} />
           <meshStandardMaterial map={gridTex} />

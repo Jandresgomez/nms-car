@@ -6,12 +6,13 @@ interface DebugState {
   braking: boolean
   left: boolean
   right: boolean
+  drift: boolean
   grounded: boolean
   fl: boolean
   fr: boolean
   rl: boolean
   rr: boolean
-  impulse: [number, number, number]
+  steerAngle: number
   set: (data: Partial<Omit<DebugState, 'set'>>) => void
 }
 
@@ -21,11 +22,12 @@ export const useDebugStore = create<DebugState>((set) => ({
   braking: false,
   left: false,
   right: false,
+  drift: false,
   grounded: false,
   fl: false,
   fr: false,
   rl: false,
   rr: false,
-  impulse: [0, 0, 0],
+  steerAngle: 0,
   set: (data) => set(data),
 }))

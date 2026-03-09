@@ -10,7 +10,7 @@ const KEY_MAP: Record<string, Action> = {
   KeyA: 'left',
   ArrowRight: 'right',
   KeyD: 'right',
-  Space: 'jump',
+  Space: 'drift',
 }
 
 /** Binds keyboard events to the InputManager's "keyboard" layer */

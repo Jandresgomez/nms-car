@@ -1,5 +1,5 @@
 /** Action names that any vehicle/entity can respond to */
-export type Action = 'forward' | 'backward' | 'left' | 'right' | 'jump'
+export type Action = 'forward' | 'backward' | 'left' | 'right' | 'drift'
 
 /** Snapshot of all action states — read every frame */
 export interface ActionState {
@@ -7,7 +7,7 @@ export interface ActionState {
   backward: boolean
   left: boolean
   right: boolean
-  jump: boolean
+  drift: boolean
 }
 
 const DEFAULT_STATE: ActionState = {
@@ -15,7 +15,7 @@ const DEFAULT_STATE: ActionState = {
   backward: false,
   left: false,
   right: false,
-  jump: false,
+  drift: false,
 }
 
 /**

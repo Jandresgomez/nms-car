@@ -1,34 +1,44 @@
+import { useState } from 'react'
 import { useDebugStore } from '../hooks/useDebugStore'
 
-export function DebugOverlay() {
-  const { speed, forward, braking, left, right, grounded, fl, fr, rl, rr, impulse } = useDebugStore()
+interface DebugOverlayProps {
+  debug: boolean
+  onToggleDebug: () => void
+  onResetCar: () => void
+}
+
+const on = '✅'
+const off = '—'
+
+export function DebugOverlay({ debug, onToggleDebug, onResetCar }: DebugOverlayProps) {
+  const { speed, forward, braking, left, right, drift, grounded, fl, fr, rl, rr, steerAngle } = useDebugStore()
+  const isMobile = 'ontouchstart' in window
+  const [expanded, setExpanded] = useState(false)
+
+  const btn: React.CSSProperties = {
+    background: 'rgba(255,255,255,0.2)', color: 'white', border: 'none',
+    borderRadius: 6, padding: '6px 14px', fontFamily: 'monospace', fontSize: 13,
+    cursor: 'pointer', width: '100%',
+  }
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        top: 12,
-        right: 12,
-        background: 'rgba(0,0,0,0.75)',
-        color: '#0f0',
-        fontFamily: 'monospace',
-        fontSize: 13,
-        padding: '10px 14px',
-        borderRadius: 6,
-        lineHeight: 1.6,
-        pointerEvents: 'none',
-        zIndex: 999,
-      }}
-    >
-      <div>speed: {speed}</div>
-      <div>W(fwd): {forward ? '✅' : '—'}</div>
-      <div>S(brk): {braking ? '✅' : '—'}</div>
-      <div>A(lft): {left ? '✅' : '—'}</div>
-      <div>D(rgt): {right ? '✅' : '—'}</div>
-      <div>grnd: {grounded ? '✅' : '❌'}</div>
-      <div>FL:{fl ? '✅' : '❌'} FR:{fr ? '✅' : '❌'}</div>
-      <div>RL:{rl ? '✅' : '❌'} RR:{rr ? '✅' : '❌'}</div>
-      <div>driveDir: [{impulse.join(', ')}]</div>
+    <div style={{
+      position: 'fixed', top: 'calc(12px + env(safe-area-inset-top))', right: 'calc(12px + env(safe-area-inset-right))', background: 'rgba(0,0,0,0.75)',
+      color: '#0f0', fontFamily: 'monospace', fontSize: 13, padding: '10px 14px',
+      borderRadius: 6, lineHeight: 1.6, zIndex: 999, display: 'flex',
+      flexDirection: 'column', gap: 4,
+    }}>
+      <button onClick={onToggleDebug} style={{ ...btn, background: debug ? 'rgba(255,100,100,0.8)' : btn.background }}>
+        {debug ? 'Hide' : 'Show'} Colliders
+      </button>
+      <button onClick={onResetCar} style={btn}>Reset Car</button>
+      {isMobile && <button onClick={() => setExpanded(e => !e)} style={btn}>{expanded ? '▲ Less' : '▼ More'}</button>}
+      {(!isMobile || expanded) && <>
+        <div style={{ marginTop: 4 }}>spd: {speed}</div>
+        <div>W:{forward ? on : off} A:{left ? on : off} S:{braking ? on : off} D:{right ? on : off}</div>
+        <div>drift:{drift ? '🔥' : off} grnd:{grounded ? on : '❌'} str:{steerAngle}</div>
+        <div>FL:{fl ? on : '❌'} FR:{fr ? on : '❌'} RL:{rl ? on : '❌'} RR:{rr ? on : '❌'}</div>
+      </>}
     </div>
   )
 }

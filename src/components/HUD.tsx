@@ -3,8 +3,8 @@ export function HUD() {
     <div
       style={{
         position: 'fixed',
-        top: 16,
-        left: 16,
+        top: 'calc(16px + env(safe-area-inset-top))',
+        left: 'calc(16px + env(safe-area-inset-left))',
         color: 'white',
         fontFamily: 'monospace',
         fontSize: 14,
