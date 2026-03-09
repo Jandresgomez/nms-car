@@ -1,12 +1,11 @@
 import { useRef, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { RigidBody, CuboidCollider, BallCollider, useRapier, type RapierRigidBody } from '@react-three/rapier'
-import { useKeyboardControls, useGLTF } from '@react-three/drei'
+import { useGLTF } from '@react-three/drei'
 import { Vector3, Quaternion } from 'three'
 import { Ray } from '@dimforge/rapier3d-compat'
-import type { MutableRefObject } from 'react'
-import type { TouchControlState } from '../hooks/useTouchControls'
 import { useDebugStore } from '../hooks/useDebugStore'
+import type { InputManager } from '../input/InputManager'
 
 const ACCEL = 500
 const BRAKE_ACCEL = 250
@@ -32,24 +31,21 @@ interface WheelHit {
 }
 
 interface CarProps {
-  touchControls: MutableRefObject<TouchControlState>
+  input: InputManager
 }
 
 // Reusable vectors to avoid per-frame allocations
 const _worldPos = new Vector3()
 const _posVec = new Vector3()
 const _fwd = new Vector3()
-const _up = new Vector3()
 const _avgNormal = new Vector3()
 const _driveDir = new Vector3()
 const _right = new Vector3()
 const _velVec = new Vector3()
-const _fwdComponent = new Vector3()
 const _lateral = new Vector3()
 
-export function Car({ touchControls }: CarProps) {
+export function Car({ input }: CarProps) {
   const body = useRef<RapierRigidBody>(null)
-  const [, getKeys] = useKeyboardControls()
   const debugSet = useDebugStore((s) => s.set)
   const { scene } = useGLTF('/hot_rod_burnout_revenge_sd.glb')
   const model = useMemo(() => {
@@ -69,13 +65,8 @@ export function Car({ touchControls }: CarProps) {
   useFrame((_, delta) => {
     if (!body.current) return
 
-    const keys = getKeys()
-    const tc = touchControls.current
-    const forward = keys.forward || tc.forward
-    const braking = keys.backward || tc.backward
-    const left = keys.left || tc.left
-    const right = keys.right || tc.right
-    const jump = keys.shoot || tc.shoot
+    const actions = input.getState()
+    const { forward, backward: braking, left, right, jump } = actions
 
     const pos = body.current.translation()
     const rot = body.current.rotation()
@@ -85,7 +76,6 @@ export function Car({ touchControls }: CarProps) {
     // Per-wheel raycast — collect surface normals
     const wheelHits: WheelHit[] = WHEELS.map((wheel) => {
       _worldPos.copy(wheel.offset).applyQuaternion(quat).add(_posVec)
-      // Cast downward in world space
       const ray = world.castRay(
         new Ray({ x: _worldPos.x, y: _worldPos.y, z: _worldPos.z }, { x: 0, y: -1, z: 0 }),
         WHEEL_RAY_LEN,
@@ -96,7 +86,6 @@ export function Car({ touchControls }: CarProps) {
         body.current!,
       )
       if (ray && ray.timeOfImpact < WHEEL_GROUND_DIST) {
-        // Get the collider that was hit and compute the normal
         const hitPoint = {
           x: _worldPos.x,
           y: _worldPos.y - ray.timeOfImpact,
@@ -115,7 +104,6 @@ export function Car({ touchControls }: CarProps) {
             return { grounded: true, normal: n }
           }
         }
-        // Fallback: assume flat ground
         return { grounded: true, normal: new Vector3(0, 1, 0) }
       }
       return { grounded: false, normal: null }
@@ -125,7 +113,6 @@ export function Car({ touchControls }: CarProps) {
     const isGrounded = groundedCount >= 1
     const canDoJump = groundedCount >= 2
 
-    // Average ground normal from all grounded wheels
     _avgNormal.set(0, 0, 0)
     for (const hit of wheelHits) {
       if (hit.grounded && hit.normal) _avgNormal.add(hit.normal)
@@ -136,10 +123,7 @@ export function Car({ touchControls }: CarProps) {
       _avgNormal.set(0, 1, 0)
     }
 
-    // Car's local forward in world space
     _fwd.set(0, 0, -1).applyQuaternion(quat)
-
-    // Project forward onto the ground plane: driveDir = fwd - normal * dot(fwd, normal)
     _driveDir.copy(_fwd).addScaledVector(_avgNormal, -_fwd.dot(_avgNormal))
     if (_driveDir.lengthSq() > 0.0001) {
       _driveDir.normalize()
@@ -147,14 +131,12 @@ export function Car({ touchControls }: CarProps) {
       _driveDir.copy(_fwd)
     }
 
-    // Right vector for lateral grip (perpendicular to drive dir on ground plane)
     _right.crossVectors(_driveDir, _avgNormal).normalize()
 
     const vel = body.current.linvel()
-    // Speed along the ground plane (not just XZ)
     const speed = Math.abs(_velVec.set(vel.x, vel.y, vel.z).dot(_driveDir))
 
-    // Turning — apply torque around the surface normal instead of world Y
+    // Turning
     let torqueAmount = 0
     if (left) torqueAmount += TURN_SPEED
     if (right) torqueAmount -= TURN_SPEED
@@ -177,7 +159,7 @@ export function Car({ touchControls }: CarProps) {
     }
     if (!jump) canJump.current = true
 
-    // Accelerate along surface
+    // Accelerate
     if (forward && isGrounded && speed < MAX_SPEED) {
       body.current.applyImpulse(
         {
@@ -189,7 +171,7 @@ export function Car({ touchControls }: CarProps) {
       )
     }
 
-    // Brake / reverse along surface
+    // Brake / reverse
     if (braking && isGrounded) {
       const forwardComponent = _velVec.set(vel.x, vel.y, vel.z).dot(_driveDir)
       const accel = forwardComponent > 0 ? BRAKE_ACCEL : REVERSE_ACCEL
@@ -206,7 +188,7 @@ export function Car({ touchControls }: CarProps) {
       }
     }
 
-    // Lateral friction: remove sideways velocity relative to the ground plane
+    // Lateral friction
     if (isGrounded) {
       const postVel = body.current.linvel()
       _velVec.set(postVel.x, postVel.y, postVel.z)

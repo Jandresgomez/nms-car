@@ -1,23 +1,21 @@
 import { useFrame, useThree } from '@react-three/fiber'
 import { useRef, useEffect } from 'react'
-import { Vector3, Quaternion, Euler, Spherical } from 'three'
-import type { MutableRefObject } from 'react'
-import type { TouchControlState } from '../hooks/useTouchControls'
+import { Vector3, Quaternion, Euler } from 'three'
+import type { InputManager } from '../input/InputManager'
 
 const BEHIND = new Vector3(0, 6, 12)
 const LOOK_AHEAD = new Vector3(0, 1, -10)
-const SNAP_SPEED = 3 // ~1 second to snap back (lerp factor per second)
+const SNAP_SPEED = 3
 
 interface GameCameraProps {
-  touchControls: MutableRefObject<TouchControlState>
+  input: InputManager
 }
 
-export function GameCamera({ touchControls }: GameCameraProps) {
+export function GameCamera({ input }: GameCameraProps) {
   const { scene, gl } = useThree()
   const smoothPos = useRef(new Vector3())
   const smoothLook = useRef(new Vector3())
 
-  // Camera orbit offset from touch
   const orbitYaw = useRef(0)
   const orbitPitch = useRef(0)
   const isDragging = useRef(false)
@@ -27,7 +25,6 @@ export function GameCamera({ touchControls }: GameCameraProps) {
     const canvas = gl.domElement
 
     const onTouchStart = (e: TouchEvent) => {
-      // Only use touches on the right half of screen for camera
       const touch = e.changedTouches[0]
       if (touch.clientX > window.innerWidth * 0.35) {
         isDragging.current = true
@@ -45,21 +42,17 @@ export function GameCamera({ touchControls }: GameCameraProps) {
       lastTouch.current = { x: touch.clientX, y: touch.clientY }
     }
 
-    const onTouchEnd = () => {
-      isDragging.current = false
-    }
+    const onTouchEnd = () => { isDragging.current = false }
 
     canvas.addEventListener('touchstart', onTouchStart, { passive: true })
     canvas.addEventListener('touchmove', onTouchMove, { passive: true })
     canvas.addEventListener('touchend', onTouchEnd, { passive: true })
     canvas.addEventListener('touchcancel', onTouchEnd, { passive: true })
 
-    // Mouse support for desktop panning
     const onMouseDown = (e: MouseEvent) => {
       isDragging.current = true
       lastTouch.current = { x: e.clientX, y: e.clientY }
     }
-
     const onMouseMove = (e: MouseEvent) => {
       if (!isDragging.current) return
       const dx = e.clientX - lastTouch.current.x
@@ -68,10 +61,7 @@ export function GameCamera({ touchControls }: GameCameraProps) {
       orbitPitch.current = Math.max(-0.5, Math.min(0.5, orbitPitch.current - dy * 0.003))
       lastTouch.current = { x: e.clientX, y: e.clientY }
     }
-
-    const onMouseUp = () => {
-      isDragging.current = false
-    }
+    const onMouseUp = () => { isDragging.current = false }
 
     canvas.addEventListener('mousedown', onMouseDown)
     canvas.addEventListener('mousemove', onMouseMove)
@@ -94,10 +84,9 @@ export function GameCamera({ touchControls }: GameCameraProps) {
     const car = scene.getObjectByName('car')
     if (!car) return
 
-    const tc = touchControls.current
-    const driving = tc.forward || tc.backward || tc.left || tc.right
+    const actions = input.getState()
+    const driving = actions.forward || actions.backward || actions.left || actions.right
 
-    // Snap orbit back to zero when driving
     if (driving) {
       const snapFactor = 1 - Math.exp(-SNAP_SPEED * delta)
       orbitYaw.current *= (1 - snapFactor)
@@ -110,7 +99,6 @@ export function GameCamera({ touchControls }: GameCameraProps) {
     const carQuat = new Quaternion()
     car.getWorldQuaternion(carQuat)
 
-    // Apply orbit offset to the base camera quaternion
     const orbitQuat = new Quaternion().setFromEuler(
       new Euler(orbitPitch.current, orbitYaw.current, 0, 'YXZ')
     )

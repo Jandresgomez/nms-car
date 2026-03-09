@@ -1,9 +1,7 @@
-import type { TouchControlState } from '../hooks/useTouchControls'
+import type { InputManager, Action } from '../input/InputManager'
 
 interface TouchControlsProps {
-  handlers: {
-    set: (key: keyof TouchControlState, value: boolean) => void
-  }
+  input: InputManager
 }
 
 const btnStyle: React.CSSProperties = {
@@ -25,28 +23,28 @@ const btnStyle: React.CSSProperties = {
 
 function Btn({
   label,
-  controlKey,
-  handlers,
+  action,
+  input,
   style,
 }: {
   label: string
-  controlKey: keyof TouchControlState
-  handlers: TouchControlsProps['handlers']
+  action: Action
+  input: InputManager
   style?: React.CSSProperties
 }) {
   return (
     <div
       style={{ ...btnStyle, ...style }}
-      onTouchStart={(e) => { e.preventDefault(); handlers.set(controlKey, true) }}
-      onTouchEnd={(e) => { e.preventDefault(); handlers.set(controlKey, false) }}
-      onTouchCancel={(e) => { e.preventDefault(); handlers.set(controlKey, false) }}
+      onTouchStart={(e) => { e.preventDefault(); input.set('touch', action, true) }}
+      onTouchEnd={(e) => { e.preventDefault(); input.set('touch', action, false) }}
+      onTouchCancel={(e) => { e.preventDefault(); input.set('touch', action, false) }}
     >
       {label}
     </div>
   )
 }
 
-export function TouchControls({ handlers }: TouchControlsProps) {
+export function TouchControls({ input }: TouchControlsProps) {
   return (
     <>
       {/* Left side: Brake (bottom) + Accel (top) */}
@@ -60,14 +58,14 @@ export function TouchControls({ handlers }: TouchControlsProps) {
       }}>
         <Btn
           label="▲ GAS"
-          controlKey="forward"
-          handlers={handlers}
+          action="forward"
+          input={input}
           style={{ background: 'rgba(50,200,50,0.25)', border: '2px solid rgba(100,255,100,0.5)' }}
         />
         <Btn
           label="■ BRK"
-          controlKey="backward"
-          handlers={handlers}
+          action="backward"
+          input={input}
           style={{ background: 'rgba(255,50,50,0.25)', border: '2px solid rgba(255,100,100,0.5)' }}
         />
       </div>
@@ -81,15 +79,15 @@ export function TouchControls({ handlers }: TouchControlsProps) {
         gap: 16,
         alignItems: 'flex-end',
       }}>
-        <Btn label="◀" controlKey="left" handlers={handlers} />
-        <Btn label="▶" controlKey="right" handlers={handlers} />
+        <Btn label="◀" action="left" input={input} />
+        <Btn label="▶" action="right" input={input} />
       </div>
 
       {/* Jump button — center right, above steering */}
       <Btn
         label="⬆ JMP"
-        controlKey="shoot"
-        handlers={handlers}
+        action="jump"
+        input={input}
         style={{
           position: 'fixed',
           bottom: 120,

@@ -1,42 +1,24 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { Physics } from '@react-three/rapier'
-import { KeyboardControls } from '@react-three/drei'
 import { FreePlayTerrain } from './components/FreePlayTerrain'
-import { Car } from './components/Car'
+import { Car } from './vehicles/Car'
 import { GameCamera } from './components/GameCamera'
 import { HUD } from './components/HUD'
 import { TouchControls } from './components/TouchControls'
 import { DebugOverlay } from './components/DebugOverlay'
 import { MainMenu } from './components/MainMenu'
 import { Level1 } from './levels/Level1'
-import { useTouchControls } from './hooks/useTouchControls'
+import { InputManager, useKeyboardInput } from './input'
 
 type GameMode = 'menu' | 'level' | 'freeplay'
 
-const keyboardMap = [
-  { name: 'forward', keys: ['ArrowUp', 'KeyW'] },
-  { name: 'backward', keys: ['ArrowDown', 'KeyS'] },
-  { name: 'left', keys: ['ArrowLeft', 'KeyA'] },
-  { name: 'right', keys: ['ArrowRight', 'KeyD'] },
-  { name: 'shoot', keys: ['Space'] },
-]
-
-export default function App() {
-  const [mode, setMode] = useState<GameMode>('menu')
-  const touch = useTouchControls()
-
-  if (mode === 'menu') {
-    return (
-      <MainMenu
-        onStart={() => setMode('level')}
-        onFreePlay={() => setMode('freeplay')}
-      />
-    )
-  }
+function Game({ mode }: { mode: 'level' | 'freeplay' }) {
+  const input = useMemo(() => new InputManager(), [])
+  useKeyboardInput(input)
 
   return (
-    <KeyboardControls map={keyboardMap}>
+    <>
       <Canvas shadows>
         <color attach="background" args={['#87CEEB']} />
         <ambientLight intensity={0.5} />
@@ -54,13 +36,28 @@ export default function App() {
         <fog attach="fog" args={['#87CEEB', 80, 150]} />
         <Physics gravity={[0, -60, 0]}>
           {mode === 'level' ? <Level1 /> : <FreePlayTerrain />}
-          <Car touchControls={touch.controls} />
+          <Car input={input} />
         </Physics>
-        <GameCamera touchControls={touch.controls} />
+        <GameCamera input={input} />
       </Canvas>
       <HUD />
       <DebugOverlay />
-      <TouchControls handlers={touch.handlers} />
-    </KeyboardControls>
+      <TouchControls input={input} />
+    </>
   )
+}
+
+export default function App() {
+  const [mode, setMode] = useState<GameMode>('menu')
+
+  if (mode === 'menu') {
+    return (
+      <MainMenu
+        onStart={() => setMode('level')}
+        onFreePlay={() => setMode('freeplay')}
+      />
+    )
+  }
+
+  return <Game mode={mode} />
 }
