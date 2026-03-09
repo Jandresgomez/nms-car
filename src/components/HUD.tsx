@@ -1,4 +1,8 @@
+import { useGameStore } from '../hooks/useGameStore'
+
 export function HUD() {
+  const coins = useGameStore((s) => s.coins)
+
   return (
     <div
       style={{
@@ -12,7 +16,8 @@ export function HUD() {
         pointerEvents: 'none',
       }}
     >
-      NO MAN'S LAND
+      <div>NO MAN'S LAND</div>
+      <div style={{ marginTop: 4 }}>🪙 {coins}</div>
     </div>
   )
 }

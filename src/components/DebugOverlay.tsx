@@ -1,17 +1,18 @@
 import { useState } from 'react'
 import { useDebugStore } from '../hooks/useDebugStore'
+import { useGameStore } from '../hooks/useGameStore'
 
 interface DebugOverlayProps {
   debug: boolean
   onToggleDebug: () => void
-  onResetCar: () => void
 }
 
 const on = '✅'
 const off = '—'
 
-export function DebugOverlay({ debug, onToggleDebug, onResetCar }: DebugOverlayProps) {
+export function DebugOverlay({ debug, onToggleDebug }: DebugOverlayProps) {
   const { speed, forward, braking, left, right, drift, grounded, fl, fr, rl, rr, steerAngle } = useDebugStore()
+  const resetTrack = useGameStore((s) => s.resetTrack)
   const isMobile = 'ontouchstart' in window
   const [expanded, setExpanded] = useState(false)
 
@@ -31,7 +32,7 @@ export function DebugOverlay({ debug, onToggleDebug, onResetCar }: DebugOverlayP
       <button onClick={onToggleDebug} style={{ ...btn, background: debug ? 'rgba(255,100,100,0.8)' : btn.background }}>
         {debug ? 'Hide' : 'Show'} Colliders
       </button>
-      <button onClick={onResetCar} style={btn}>Reset Car</button>
+      <button onClick={resetTrack} style={btn}>Reset Track</button>
       {isMobile && <button onClick={() => setExpanded(e => !e)} style={btn}>{expanded ? '▲ Less' : '▼ More'}</button>}
       {(!isMobile || expanded) && <>
         <div style={{ marginTop: 4 }}>spd: {speed}</div>

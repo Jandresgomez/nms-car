@@ -1,4 +1,4 @@
-import { useRef, useMemo, useEffect } from 'react'
+import { useRef, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { RigidBody, CuboidCollider, BallCollider, useRapier, type RapierRigidBody } from '@react-three/rapier'
 import { useGLTF } from '@react-three/drei'
@@ -18,6 +18,8 @@ const STEER_RETURN_SPEED = 5
 const WHEELBASE = 3.35
 const LATERAL_FRICTION = 4
 const GROUND_RAY_LEN = 1.2
+const DRIFT_STEER_MULTIPLIER = 2;
+const DRIFT_LF_MULTIPLIER = 1;
 
 const FRONT_WHEEL_RADIUS = 0.5
 const REAR_WHEEL_RADIUS = 0.5
@@ -49,7 +51,6 @@ interface Particle {
 
 interface CarProps {
   input: InputManager
-  resetRef?: React.RefObject<(() => void) | null>
 }
 
 const _fwd = new Vector3()
@@ -58,7 +59,7 @@ const _wheelWorld = new Vector3()
 const _wpos = new Vector3()
 const _obj = new Object3D()
 
-export function Car({ input, resetRef }: CarProps) {
+export function Car({ input }: CarProps) {
   const body = useRef<RapierRigidBody>(null)
   const smokeRef = useRef<InstancedMesh>(null)
   const debugSet = useDebugStore((s) => s.set)
@@ -77,18 +78,6 @@ export function Car({ input, resetRef }: CarProps) {
     Array.from({ length: MAX_PARTICLES }, () => ({ alive: false, age: 0, x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0 }))
   )
   const spawnTimer = useRef(0)
-
-  useEffect(() => {
-    if (!resetRef) return
-    resetRef.current = () => {
-      if (!body.current) return
-      body.current.setTranslation({ x: 0, y: 3, z: 0 }, true)
-      body.current.setRotation({ x: 0, y: 0, z: 0, w: 1 }, true)
-      body.current.setLinvel({ x: 0, y: 0, z: 0 }, true)
-      body.current.setAngvel({ x: 0, y: 0, z: 0 }, true)
-      steerAngle.current = 0
-    }
-  })
 
   useFrame((_, delta) => {
     if (!body.current) return
@@ -134,8 +123,8 @@ export function Car({ input, resetRef }: CarProps) {
     const sDiff = steerTarget - steerAngle.current
     steerAngle.current += Math.sign(sDiff) * Math.min(Math.abs(sDiff), sSpd * dt)
 
-    const effectiveSteerAngle = drift ? steerAngle.current * 1.5 : steerAngle.current
-    const effectiveLateralFriction = drift ? LATERAL_FRICTION * 0.3 : LATERAL_FRICTION
+    const effectiveSteerAngle = drift ? steerAngle.current * DRIFT_STEER_MULTIPLIER : steerAngle.current
+    const effectiveLateralFriction = drift ? LATERAL_FRICTION * DRIFT_LF_MULTIPLIER : LATERAL_FRICTION
 
     if (isGrounded) {
       let force = 0

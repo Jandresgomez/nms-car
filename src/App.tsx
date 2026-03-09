@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useRef } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { Physics } from '@react-three/rapier'
 import { FreePlayTerrain } from './components/FreePlayTerrain'
@@ -10,6 +10,7 @@ import { DebugOverlay } from './components/DebugOverlay'
 import { MainMenu } from './components/MainMenu'
 import { Level1 } from './levels/Level1'
 import { InputManager, useKeyboardInput } from './input'
+import { useGameStore } from './hooks/useGameStore'
 
 type GameMode = 'menu' | 'level' | 'freeplay'
 
@@ -17,7 +18,6 @@ function Game({ mode }: { mode: 'level' | 'freeplay' }) {
   const input = useMemo(() => new InputManager(), [])
   const [debug, setDebug] = useState(false)
   const toggleDebug = useCallback(() => setDebug((d) => !d), [])
-  const resetRef = useRef<(() => void) | null>(null)
   useKeyboardInput(input)
 
   return (
@@ -39,12 +39,12 @@ function Game({ mode }: { mode: 'level' | 'freeplay' }) {
         <fog attach="fog" args={['#87CEEB', 80, 150]} />
         <Physics debug={debug} gravity={[0, -30, 0]}>
           {mode === 'level' ? <Level1 /> : <FreePlayTerrain />}
-          <Car input={input} resetRef={resetRef} />
+          <Car input={input} />
         </Physics>
         <GameCamera input={input} />
       </Canvas>
       <HUD />
-      <DebugOverlay debug={debug} onToggleDebug={toggleDebug} onResetCar={() => resetRef.current?.()} />
+      <DebugOverlay debug={debug} onToggleDebug={toggleDebug} />
       <TouchControls input={input} />
     </>
   )
@@ -52,6 +52,7 @@ function Game({ mode }: { mode: 'level' | 'freeplay' }) {
 
 export default function App() {
   const [mode, setMode] = useState<GameMode>('menu')
+  const trackResetCount = useGameStore((s) => s.trackResetCount)
 
   if (mode === 'menu') {
     return (
@@ -62,5 +63,5 @@ export default function App() {
     )
   }
 
-  return <Game mode={mode} />
+  return <Game key={trackResetCount} mode={mode} />
 }

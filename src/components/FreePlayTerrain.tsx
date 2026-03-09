@@ -1,6 +1,7 @@
 import { RigidBody, CuboidCollider } from '@react-three/rapier'
 import { useMemo } from 'react'
-import { RepeatWrapping, TextureLoader, CanvasTexture } from 'three'
+import { RepeatWrapping, CanvasTexture } from 'three'
+import { Straight, LCurve, RCurve, RampUp, RampDown } from '../track-parts'
 
 function useGridTexture() {
   return useMemo(() => {
@@ -29,90 +30,7 @@ function useGridTexture() {
   }, [])
 }
 
-function Ramp({ position, rotation }: { position: [number, number, number]; rotation?: [number, number, number] }) {
-  return (
-    <RigidBody type="fixed" position={position} rotation={rotation || [0, 0, 0]}>
-      <mesh receiveShadow castShadow>
-        <boxGeometry args={[6, 0.3, 8]} />
-        <meshStandardMaterial color="#d4a373" />
-      </mesh>
-    </RigidBody>
-  )
-}
-
-function Bridge() {
-  const segments = useMemo(() => {
-    const segs: { pos: [number, number, number]; rot: [number, number, number]; len: number }[] = []
-    const width = 8
-    const count = 24
-    const bridgeLen = 80
-    const peakHeight = 15
-    const startZ = -15
-
-    for (let i = 0; i < count; i++) {
-      const t0 = i / count
-      const t1 = (i + 1) / count
-
-      // Parabolic arc: y = 4*h*t*(1-t)
-      const z0 = startZ - t0 * bridgeLen
-      const z1 = startZ - t1 * bridgeLen
-      const y0 = 4 * peakHeight * t0 * (1 - t0)
-      const y1 = 4 * peakHeight * t1 * (1 - t1)
-
-      const midZ = (z0 + z1) / 2
-      const midY = (y0 + y1) / 2
-      const dz = z1 - z0
-      const dy = y1 - y0
-      const segLen = Math.sqrt(dz * dz + dy * dy)
-      const angle = Math.atan2(dy, -dz) // negative Z is forward
-
-      segs.push({
-        pos: [0, midY, midZ],
-        rot: [angle, 0, 0],
-        len: segLen + 0.1, // slight overlap to avoid gaps
-      })
-    }
-    return segs
-  }, [])
-
-  return (
-    <group>
-      {segments.map((seg, i) => (
-        <RigidBody key={`b-${i}`} type="fixed" position={seg.pos} rotation={seg.rot} friction={0.6}>
-          <mesh receiveShadow castShadow>
-            <boxGeometry args={[8, 0.4, seg.len]} />
-            <meshStandardMaterial color="#8B7355" />
-          </mesh>
-        </RigidBody>
-      ))}
-      {/* Side rails */}
-      {segments.map((seg, i) =>
-        [-3.8, 3.8].map((xOff, j) => (
-          <RigidBody key={`rail-${i}-${j}`} type="fixed"
-            position={[xOff, seg.pos[1] + 0.8, seg.pos[2]]}
-            rotation={seg.rot} friction={0.3}
-          >
-            <mesh castShadow>
-              <boxGeometry args={[0.3, 1.2, seg.len]} />
-              <meshStandardMaterial color="#666" />
-            </mesh>
-          </RigidBody>
-        ))
-      )}
-    </group>
-  )
-}
-
 export function FreePlayTerrain() {
-  const ramps = useMemo(
-    () => [
-      { position: [20, 1, -30] as [number, number, number], rotation: [-0.2, 0, 0] as [number, number, number] },
-      { position: [-15, 1.5, -60] as [number, number, number], rotation: [-0.25, 0.5, 0] as [number, number, number] },
-      { position: [10, 2, -100] as [number, number, number], rotation: [-0.3, -0.3, 0] as [number, number, number] },
-    ],
-    [],
-  )
-
   const gridTex = useGridTexture()
 
   return (
@@ -126,13 +44,36 @@ export function FreePlayTerrain() {
         </mesh>
       </RigidBody>
 
-      {/* Ramps */}
-      {ramps.map((r, i) => (
-        <Ramp key={i} position={r.position} rotation={r.rotation} />
-      ))}
+      {/* === Track with coins === */}
 
-      {/* Curved bridge */}
-      <Bridge />
+      {/* Starting straights */}
+      <Straight position={[0, 0, 0]}  />
+      <Straight position={[0, 0, -10]} coins="center" />
+      <Straight position={[0, 0, -20]} coins="center" />
+      <Straight position={[0, 0, -30]} coins="left"  />
+      <Straight position={[0, 0, -40]} coins="left" />
+      <Straight position={[0, 0, -50]}  />
+
+      {/* Ramp up */}
+      <RampUp position={[0, 0, -55]} />
+
+      {/* Elevated section */}
+      <Straight position={[0, 6.105, -105]} />
+      <RCurve position={[0, 6.105, -115]} coins="center" />
+      <Straight position={[37, 6.105, -139]} rotation={[0, Math.PI/2, 0]} coins="center" />
+      <RCurve position={[47, 6.105, -139]} rotation={[0, -Math.PI/2, 0]} coins="center" />
+      <LCurve position={[71, 6.105, -115]} rotation={[0, Math.PI, 0]} coins="center" />
+      <RCurve position={[95, 6.105, -91]} rotation={[0, -Math.PI/2, 0]} coins="center" />
+
+      {/* Ramp down */}
+      <RampDown position={[119, 6.105, -60]} rotation={[0, Math.PI, 0]} />
+
+      {/* Return straights */}
+      <Straight position={[119, 0, -10]} rotation={[0, Math.PI, 0]} coins="center" />
+      <Straight position={[119, 0, -0]} rotation={[0, Math.PI, 0]} coins="center" />
+      <Straight position={[119, 0, 10]} rotation={[0, Math.PI, 0]} coins="center" />
+      <Straight position={[119, 0, 20]} rotation={[0, Math.PI, 0]} coins="center" />
+      <Straight position={[119, 0, 30]} rotation={[0, Math.PI, 0]} />
     </>
   )
 }
