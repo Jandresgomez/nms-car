@@ -129,10 +129,14 @@ export function GameCamera({ input }: GameCameraProps) {
     const carQuat = new Quaternion()
     car.getWorldQuaternion(carQuat)
 
+    // Extract yaw only — ignore pitch/roll so camera doesn't flip with the car
+    const euler = new Euler().setFromQuaternion(carQuat, 'YXZ')
+    const yawOnlyQuat = new Quaternion().setFromEuler(new Euler(0, euler.y, 0, 'YXZ'))
+
     const orbitQuat = new Quaternion().setFromEuler(
       new Euler(orbitPitch.current, orbitYaw.current, 0, 'YXZ')
     )
-    const combinedQuat = carQuat.clone().multiply(orbitQuat)
+    const combinedQuat = yawOnlyQuat.multiply(orbitQuat)
 
     const desiredPos = BEHIND.clone().multiplyScalar(zoom.current).applyQuaternion(combinedQuat).add(carPos)
     const desiredLook = LOOK_AHEAD.clone().applyQuaternion(combinedQuat).add(carPos)

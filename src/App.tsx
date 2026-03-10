@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback } from 'react'
 import { Canvas } from '@react-three/fiber'
+import { Sky } from '@react-three/drei'
 import { Physics } from '@react-three/rapier'
 import { FreePlayTerrain } from './components/FreePlayTerrain'
 import { Car } from './vehicles/Car'
@@ -23,11 +24,11 @@ function Game({ mode }: { mode: 'level' | 'freeplay' }) {
   return (
     <>
       <Canvas shadows>
-        <color attach="background" args={['#87CEEB']} />
-        <ambientLight intensity={0.5} />
+        <color attach="background" args={['#7ec8e3']} />
+        <ambientLight intensity={0.8} />
         <directionalLight
           position={[50, 50, 25]}
-          intensity={1.5}
+          intensity={2}
           castShadow
           shadow-mapSize={[2048, 2048]}
           shadow-camera-far={200}
@@ -36,10 +37,11 @@ function Game({ mode }: { mode: 'level' | 'freeplay' }) {
           shadow-camera-top={50}
           shadow-camera-bottom={-50}
         />
-        <fog attach="fog" args={['#87CEEB', 80, 150]} />
-        <Physics debug={debug} gravity={[0, -30, 0]}>
+        <hemisphereLight args={['#87CEEB', '#556B2F', 0.6]} />
+        <fog attach="fog" args={['#b0d4f1', 200, 500]} />
+        <Physics debug={debug} gravity={[0, -15, 0]}>
           {mode === 'level' ? <Level1 /> : <FreePlayTerrain />}
-          <Car input={input} />
+          <Car input={input} debug={debug} />
         </Physics>
         <GameCamera input={input} />
       </Canvas>

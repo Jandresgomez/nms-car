@@ -11,7 +11,7 @@ const on = '✅'
 const off = '—'
 
 export function DebugOverlay({ debug, onToggleDebug }: DebugOverlayProps) {
-  const { speed, forward, braking, left, right, drift, grounded, fl, fr, rl, rr, steerAngle } = useDebugStore()
+  const { speed, forward, braking, left, right, drift, grounded, fl, fr, rl, rr, steerAngle, flC, frC, rlC, rrC } = useDebugStore()
   const resetTrack = useGameStore((s) => s.resetTrack)
   const isMobile = 'ontouchstart' in window
   const [expanded, setExpanded] = useState(false)
@@ -38,7 +38,8 @@ export function DebugOverlay({ debug, onToggleDebug }: DebugOverlayProps) {
         <div style={{ marginTop: 4 }}>spd: {speed}</div>
         <div>W:{forward ? on : off} A:{left ? on : off} S:{braking ? on : off} D:{right ? on : off}</div>
         <div>drift:{drift ? '🔥' : off} grnd:{grounded ? on : '❌'} str:{steerAngle}</div>
-        <div>FL:{fl ? on : '❌'} FR:{fr ? on : '❌'} RL:{rl ? on : '❌'} RR:{rr ? on : '❌'}</div>
+        <div>FL:{fl ? on : '❌'} {flC} | FR:{fr ? on : '❌'} {frC}</div>
+        <div>RL:{rl ? on : '❌'} {rlC} | RR:{rr ? on : '❌'} {rrC}</div>
       </>}
     </div>
   )
