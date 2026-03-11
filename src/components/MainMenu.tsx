@@ -1,68 +1,34 @@
 import { Canvas, useFrame } from '@react-three/fiber'
 import { useRef, useState } from 'react'
 import { useGLTF } from '@react-three/drei'
-import { CylinderGeometry, type Group } from 'three'
-import { useGameStore, type VehicleType } from '../hooks/useGameStore'
+import { type Group } from 'three'
+import { useGameStore } from '../hooks/useGameStore'
+import { CAR_REGISTRY } from '../vehicles/registry'
 
-const VEHICLES: { type: VehicleType; label: string; emoji: string }[] = [
-  { type: 'car', label: 'Family Car', emoji: '🚗' },
-  { type: 'ball', label: 'Ball', emoji: '⚽' },
-  { type: 'base', label: 'Basic', emoji: '🚗' },
-]
-
-const WHEEL_POSITIONS = [
-  { x: -1.3, y: -0.5, z: -1.5 },
-  { x: 1.3, y: -0.5, z: -1.5 },
-  { x: -1.3, y: -0.5, z: 1.5 },
-  { x: 1.3, y: -0.5, z: 1.5 },
-]
-
-function RotatingPreview({ vehicleType }: { vehicleType: VehicleType }) {
+function RotatingPreview({ vehicleId }: { vehicleId: string }) {
   const groupRef = useRef<Group>(null)
-  const { scene } = useGLTF('/cars/family-car.glb')
+  const entry = CAR_REGISTRY.find((c) => c.id === vehicleId) ?? CAR_REGISTRY[0]
+
+  // Preload all car GLBs
+  const { scene: familyScene } = useGLTF('/cars/family-car.glb')
+  const { scene: hotrodScene } = useGLTF('/cars/hot_rod_burnout_revenge_sd.glb')
+  const { scene: greenScene } = useGLTF('/cars/green-car.glb')
+
+  const scenes: Record<string, { scene: any; scale: number; y: number }> = {
+    car: { scene: familyScene, scale: 0.5, y: -0.3 },
+    hotrod: { scene: hotrodScene, scale: 125, y: -0.5 },
+    green: { scene: greenScene, scale: 0.5, y: -0.3 },
+  }
 
   useFrame((_, delta) => {
     if (groupRef.current) groupRef.current.rotation.y += delta * 0.4
   })
 
-  if (vehicleType === 'ball') {
-    return (
-      <group ref={groupRef} position={[0, 0, 0]}>
-        <mesh>
-          <sphereGeometry args={[1, 32, 32]} />
-          <meshStandardMaterial color="#ff6b35" metalness={0.4} roughness={0.3} />
-        </mesh>
-      </group>
-    )
-  }
-
-  if (vehicleType === 'base') {
-    return (
-      <group ref={groupRef} position={[0, 0, 0]} scale={0.5}>
-        <mesh>
-          <mesh position={[0, -0.3, 0]}>
-            <boxGeometry args={[2.8, 1, 4]} />
-            <meshStandardMaterial color="crimson" />
-          </mesh>
-          {WHEEL_POSITIONS.map((wheelPos, i) => (
-            <group
-              key={i}
-              position={[wheelPos.x, wheelPos.y - 0.4, wheelPos.z]}
-            >
-              <lineSegments rotation={[0, 0, Math.PI / 2]}>
-                <edgesGeometry args={[new CylinderGeometry(0.8, 0.8, 0.3, 16)]} />
-                <lineBasicMaterial color="white" />
-              </lineSegments>
-            </group>
-          ))}
-        </mesh>
-      </group>
-    )
-  }
+  const cfg = scenes[entry.id] ?? scenes.car
 
   return (
-    <group ref={groupRef} position={[0, -0.3, 0]}>
-      <primitive object={scene.clone()} scale={0.5} rotation={[0, Math.PI, 0]} />
+    <group ref={groupRef} position={[0, cfg.y, 0]}>
+      <primitive object={cfg.scene.clone()} scale={cfg.scale} rotation={[0, Math.PI, 0]} />
     </group>
   )
 }
@@ -101,15 +67,15 @@ function MenuButton({ label, onClick, style }: { label: string; onClick: () => v
 }
 
 export function MainMenu({ onStart, onFreePlay }: { onStart: () => void; onFreePlay: () => void }) {
-  const { vehicleType, setVehicleType } = useGameStore()
+  const { vehicleId, setVehicleId } = useGameStore()
 
   const cycleVehicle = (dir: number) => {
-    const idx = VEHICLES.findIndex((v) => v.type === vehicleType)
-    const next = (idx + dir + VEHICLES.length) % VEHICLES.length
-    setVehicleType(VEHICLES[next].type)
+    const idx = CAR_REGISTRY.findIndex((c) => c.id === vehicleId)
+    const next = (idx + dir + CAR_REGISTRY.length) % CAR_REGISTRY.length
+    setVehicleId(CAR_REGISTRY[next].id)
   }
 
-  const current = VEHICLES.find((v) => v.type === vehicleType)!
+  const current = CAR_REGISTRY.find((c) => c.id === vehicleId) ?? CAR_REGISTRY[0]
 
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
@@ -118,7 +84,7 @@ export function MainMenu({ onStart, onFreePlay }: { onStart: () => void; onFreeP
         <ambientLight intensity={0.3} />
         <directionalLight position={[5, 5, 5]} intensity={1} />
         <fog attach="fog" args={['#0a0a1a', 10, 20]} />
-        <RotatingPreview vehicleType={vehicleType} />
+        <RotatingPreview vehicleId={vehicleId} />
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1, 0]}>
           <planeGeometry args={[50, 50]} />
           <meshStandardMaterial color="#1a1a2e" />
@@ -164,7 +130,7 @@ export function MainMenu({ onStart, onFreePlay }: { onStart: () => void; onFreeP
               fontSize: 'clamp(0.9rem, 2.5vw, 1.2rem)',
               letterSpacing: '0.1em', textTransform: 'uppercase',
             }}>
-              {current.label}
+              {current.name}
             </div>
           </div>
           <button onClick={() => cycleVehicle(1)} style={{
@@ -194,3 +160,5 @@ export function MainMenu({ onStart, onFreePlay }: { onStart: () => void; onFreeP
 }
 
 useGLTF.preload('/cars/family-car.glb')
+useGLTF.preload('/cars/hot_rod_burnout_revenge_sd.glb')
+useGLTF.preload('/cars/green-car.glb')

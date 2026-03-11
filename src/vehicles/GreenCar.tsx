@@ -5,21 +5,21 @@ import type { InputManager } from '../input/InputManager'
 import { useGameStore } from '../hooks/useGameStore'
 
 const PHYSICS: CarPhysicsOverrides = {
-  driveForce: 700,
+  driveForce: 1000,
 }
 
 // Visual mapping: how the GLB model fits over the physics chassis
-const BODY_SCALE = 0.75
+const BODY_SCALE = 2.3
 const BODY_ROTATION: [number, number, number] = [0, Math.PI, 0]
-const BODY_OFFSET: [number, number, number] = [0, -1.5, 0]
+const BODY_OFFSET: [number, number, number] = [0, -0.1, 0]
 
-interface FamilyCarProps {
+interface GreenCarProps {
   input: InputManager
 }
 
-export const FamilyCar = ({ input }: FamilyCarProps) => {
+export const GreenCar = ({ input }: GreenCarProps) => {
   const debug = useGameStore((s) => s.debug)
-  const { scene } = useGLTF('/cars/family-car.glb')
+  const { scene } = useGLTF('/cars/green-car.glb')
   const model = useMemo(() => {
     const clone = scene.clone()
     clone.traverse((child: any) => {

@@ -1,7 +1,8 @@
 import { useState, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { useDebugStore } from '../hooks/useDebugStore'
-import { useGameStore, type VehicleType } from '../hooks/useGameStore'
+import { useGameStore } from '../hooks/useGameStore'
+import { CAR_REGISTRY } from '../vehicles/registry'
 
 // FPS counter component that runs inside the Canvas via useFrame
 export function FpsTracker() {
@@ -30,13 +31,11 @@ interface DebugOverlayProps {
 const on = '✅'
 const off = '—'
 
-const VEHICLES: VehicleType[] = ['car', 'ball']
-
 const f = (v: number, d = 2) => v.toFixed(d).padStart(d + 4)
 
 export function DebugOverlay({ debug, onToggleDebug }: DebugOverlayProps) {
   const d = useDebugStore((s) => s)
-  const { resetTrack, vehicleType, setVehicleType } = useGameStore()
+  const { resetTrack, vehicleId, setVehicleId } = useGameStore()
   const [expanded, setExpanded] = useState(true)
   const { recording, toggleRecording, downloadLog, log } = useDebugStore()
 
@@ -54,15 +53,20 @@ export function DebugOverlay({ debug, onToggleDebug }: DebugOverlayProps) {
       flexDirection: 'column', gap: 4, width: 260, minWidth: 260,
     }}>
       {/* Vehicle switcher */}
-      <div style={{ display: 'flex', gap: 4 }}>
-        {VEHICLES.map((v) => (
-          <button key={v} onClick={() => { setVehicleType(v); resetTrack() }} style={{
-            ...btn, flex: 1,
-            background: vehicleType === v ? 'rgba(100,200,255,0.6)' : btn.background,
-          }}>
-            {v === 'car' ? '🚗' : '⚽'} {v}
-          </button>
-        ))}
+      <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+        <button onClick={() => {
+          const idx = CAR_REGISTRY.findIndex((c) => c.id === vehicleId)
+          setVehicleId(CAR_REGISTRY[(idx - 1 + CAR_REGISTRY.length) % CAR_REGISTRY.length].id)
+          resetTrack()
+        }} style={{ ...btn, flex: 0, padding: '6px 10px' }}>◀</button>
+        <div style={{ flex: 1, textAlign: 'center', color: 'white', fontSize: 13 }}>
+          {CAR_REGISTRY.find((c) => c.id === vehicleId)?.name}
+        </div>
+        <button onClick={() => {
+          const idx = CAR_REGISTRY.findIndex((c) => c.id === vehicleId)
+          setVehicleId(CAR_REGISTRY[(idx + 1) % CAR_REGISTRY.length].id)
+          resetTrack()
+        }} style={{ ...btn, flex: 0, padding: '6px 10px' }}>▶</button>
       </div>
       <button onClick={onToggleDebug} style={{ ...btn, background: debug ? 'rgba(255,100,100,0.8)' : btn.background }}>
         {debug ? 'Hide' : 'Show'} Colliders
@@ -85,14 +89,10 @@ export function DebugOverlay({ debug, onToggleDebug }: DebugOverlayProps) {
         <div>|vel|: {f(d.velMag)}</div>
         <div>W:{d.forward ? on : off} A:{d.left ? on : off} S:{d.braking ? on : off} D:{d.right ? on : off}</div>
         <div>drift:{d.drift ? '🔥' : off} grnd:{d.grounded ? on : '❌'}</div>
-        {vehicleType === 'car' && <>
+        {vehicleId !== 'ball' && <>
           <div>str: {f(d.steerAngle)}</div>
           <div>FL:{d.fl ? on : '❌'} {d.flC} | FR:{d.fr ? on : '❌'} {d.frC}</div>
           <div>RL:{d.rl ? on : '❌'} {d.rlC} | RR:{d.rr ? on : '❌'} {d.rrC}</div>
-        </>}
-        {vehicleType === 'ball' && <>
-          <div>angVel: {d.angVel}</div>
-          <div>jump: {d.boosting ? '🦘' : off}</div>
         </>}
       </>}
     </div>

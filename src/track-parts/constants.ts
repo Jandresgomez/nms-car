@@ -17,7 +17,7 @@
  *   RampDown:  5.0w x 2.4h  x 15.6l  — decline going forward
  */
 
-export const TRACK_SCALE = 3
+export const TRACK_SCALE = 4
 
 /** Scaled dimensions for positioning math */
 export const TILE = {

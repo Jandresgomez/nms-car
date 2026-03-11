@@ -114,8 +114,8 @@ export function GameCamera({ input }: GameCameraProps) {
   }, [gl])
 
   useFrame((state, delta) => {
-    const vehicleType = useGameStore.getState().vehicleType
-    const targetName = vehicleType === 'ball' ? 'ball' : 'car'
+    const vehicleId = useGameStore.getState().vehicleId
+    const targetName = 'car'
     const target = scene.getObjectByName(targetName)
     if (!target) return
 
@@ -126,7 +126,7 @@ export function GameCamera({ input }: GameCameraProps) {
     const targetPos = new Vector3()
     target.getWorldPosition(targetPos)
 
-    if (vehicleType === 'ball') {
+    if (false) {
       // Ball: pure orbit camera — no yaw snapping, free orbit always
       if (driving && !locked) {
         const snapFactor = 1 - Math.exp(-SNAP_SPEED * 0.3 * delta)

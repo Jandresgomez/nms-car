@@ -1,9 +1,15 @@
 import { RigidBody, CuboidCollider } from '@react-three/rapier'
 import { useMemo } from 'react'
 import { RepeatWrapping, CanvasTexture } from 'three'
-import { Straight, LCurve, RCurve, RampUp, RampDown } from '../track-parts'
+import { Straight, LCurve, RCurve, RampUp, RampDown, TILE } from '../track-parts'
 import { useGameStore } from '../hooks/useGameStore'
 import { Coin } from '../components/Coin'
+
+/** Shorthand aliases – every position is now a multiple of tile dimensions */
+const S = TILE.straightLength  // straight piece spacing along Z
+const C = TILE.curveSize       // curve bounding box (square)
+const R = TILE.rampLength      // ramp length along Z
+const RH = TILE.rampHeight     // ramp peak height
 
 function coinGrid(
   center: [number, number, number],
@@ -55,6 +61,29 @@ export function FreePlayTerrain() {
   const gridTex = useGridTexture()
   const debug = useGameStore((s) => s.debug)
 
+  // Precompute key Y / Z anchors from tile dimensions
+  const rampStartZ = -6 * S          // Z where ramp begins (after 6 straights)
+  const rampEndZ = rampStartZ - R    // Z where ramp ends (elevated section starts)
+  const elevY = RH                   // elevated section Y
+
+  // Elevated section: straight → RCurve → lateral straight → RCurve → LCurve → RCurve
+  const elev0Z = rampEndZ - S        // first elevated straight
+  const rc1Z = elev0Z - S            // first right curve
+  const lateralX = C - S             // X offset after first curve exit
+  const lateralZ = rc1Z - C + S      // Z of lateral straight (curve exit)
+  const rc2X = lateralX + S          // second right curve X
+  const lc1X = rc2X + C - S          // left curve X (flipped back)
+  const lc1Z = lateralZ + C - S      // left curve Z
+  const rc3X = lc1X + C - S          // third right curve X
+  const rc3Z = lc1Z + C - S          // third right curve Z
+
+  // Ramp down origin: continues from rc3 exit
+  const rampDownX = rc3X + C - S
+  const rampDownZ = rc3Z + R         // ramp goes +Z (rotated 180°)
+
+  // Return straights at ground level, same X as ramp down exit
+  const returnX = rampDownX
+
   return (
     <>
       {/* Ground */}
@@ -73,32 +102,32 @@ export function FreePlayTerrain() {
 
       {/* Starting straights */}
       <Straight position={[0, 0, 0]} />
-      <Straight position={[0, 0, -10]} coins="center" />
-      <Straight position={[0, 0, -20]} coins="center" />
-      <Straight position={[0, 0, -30]} coins="left" />
-      <Straight position={[0, 0, -40]} coins="left" />
-      <Straight position={[0, 0, -50]} />
+      <Straight position={[0, 0, -1 * S]} coins="center" />
+      <Straight position={[0, 0, -2 * S]} coins="center" />
+      <Straight position={[0, 0, -3 * S]} coins="left" />
+      <Straight position={[0, 0, -4 * S]} coins="left" />
+      <Straight position={[0, 0, -5 * S]} />
 
       {/* Ramp up */}
-      <RampUp position={[0, 0, -55]} />
+      <RampUp position={[0, 0, rampStartZ]} />
 
       {/* Elevated section */}
-      <Straight position={[0, 6.105, -105]} />
-      <RCurve position={[0, 6.105, -115]} coins="center" />
-      <Straight position={[37, 6.105, -139]} rotation={[0, Math.PI / 2, 0]} coins="center" />
-      <RCurve position={[47, 6.105, -139]} rotation={[0, -Math.PI / 2, 0]} coins="center" />
-      <LCurve position={[71, 6.105, -115]} rotation={[0, Math.PI, 0]} coins="center" />
-      <RCurve position={[95, 6.105, -91]} rotation={[0, -Math.PI / 2, 0]} coins="center" />
+      <Straight position={[0, elevY, elev0Z]} />
+      <RCurve position={[0, elevY, rc1Z]} coins="center" />
+      <Straight position={[lateralX, elevY, lateralZ]} rotation={[0, Math.PI / 2, 0]} coins="center" />
+      <RCurve position={[rc2X, elevY, lateralZ]} rotation={[0, -Math.PI / 2, 0]} coins="center" />
+      <LCurve position={[lc1X, elevY, lc1Z]} rotation={[0, Math.PI, 0]} coins="center" />
+      <RCurve position={[rc3X, elevY, rc3Z]} rotation={[0, -Math.PI / 2, 0]} coins="center" />
 
       {/* Ramp down */}
-      <RampDown position={[119, 6.105, -60]} rotation={[0, Math.PI, 0]} />
+      <RampDown position={[rampDownX, elevY, rampDownZ]} rotation={[0, Math.PI, 0]} />
 
       {/* Return straights */}
-      <Straight position={[119, 0, -10]} rotation={[0, Math.PI, 0]} coins="center" />
-      <Straight position={[119, 0, -0]} rotation={[0, Math.PI, 0]} coins="center" />
-      <Straight position={[119, 0, 10]} rotation={[0, Math.PI, 0]} coins="center" />
-      <Straight position={[119, 0, 20]} rotation={[0, Math.PI, 0]} coins="center" />
-      <Straight position={[119, 0, 30]} rotation={[0, Math.PI, 0]} />
+      <Straight position={[returnX, 0, -1 * S]} rotation={[0, Math.PI, 0]} coins="center" />
+      <Straight position={[returnX, 0, 0]} rotation={[0, Math.PI, 0]} coins="center" />
+      <Straight position={[returnX, 0, 1 * S]} rotation={[0, Math.PI, 0]} coins="center" />
+      <Straight position={[returnX, 0, 2 * S]} rotation={[0, Math.PI, 0]} coins="center" />
+      <Straight position={[returnX, 0, 3 * S]} rotation={[0, Math.PI, 0]} />
     </>
   )
 }

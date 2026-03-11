@@ -1,4 +1,4 @@
-import { useRef, useCallback } from 'react'
+import { useRef, useEffect, useCallback } from 'react'
 import type { InputManager } from '../input/InputManager'
 
 interface AnalogTouchControlsProps { input: InputManager }
@@ -30,99 +30,110 @@ export function AnalogTouchControls({ input }: AnalogTouchControlsProps) {
   const steerRef = useRef<HTMLDivElement>(null)
   const steerIndicatorRef = useRef<HTMLDivElement>(null)
 
-  // Left side: vertical throttle slider
-  const updateGas = useCallback((e: React.TouchEvent) => {
-    e.preventDefault()
-    const el = gasRef.current
-    if (!el) return
-    const rect = el.getBoundingClientRect()
-    let throttle = 0
-    for (let i = 0; i < e.touches.length; i++) {
-      const t = e.touches[i]
-      if (t.clientX < rect.left || t.clientX > rect.right ||
-          t.clientY < rect.top || t.clientY > rect.bottom) continue
-      // Map Y position: top = 1, center = 0, bottom = -1
-      const yRatio = (t.clientY - rect.top) / rect.height
-      throttle = 1 - yRatio * 2
-      break
-    }
+  // Track which touch ID owns each control
+  const gasTouchId = useRef<number | null>(null)
+  const steerTouchId = useRef<number | null>(null)
+  // Cache rects at touch start so we have stable reference
+  const gasRect = useRef<DOMRect | null>(null)
+  const steerRect = useRef<DOMRect | null>(null)
+
+  const applyGas = useCallback((clientY: number) => {
+    const rect = gasRect.current
+    if (!rect) return
+    const yRatio = (clientY - rect.top) / rect.height
+    const throttle = Math.max(-1, Math.min(1, 1 - yRatio * 2))
     input.setAxis('touch', 'throttle', throttle)
     if (gasIndicatorRef.current) {
-      const pct = (1 - throttle) / 2 * 100
+      const pct = Math.max(0, Math.min(100, (1 - throttle) / 2 * 100))
       gasIndicatorRef.current.style.top = `${pct}%`
       gasIndicatorRef.current.style.opacity = '1'
     }
   }, [input])
 
-  const clearGas = useCallback((e: React.TouchEvent) => {
-    e.preventDefault()
-    const el = gasRef.current
-    if (!el) return
-    const rect = el.getBoundingClientRect()
-    let found = false
-    for (let i = 0; i < e.touches.length; i++) {
-      const t = e.touches[i]
-      if (t.clientX >= rect.left && t.clientX <= rect.right &&
-          t.clientY >= rect.top && t.clientY <= rect.bottom) {
-        found = true
-        break
-      }
-    }
-    if (!found) {
-      input.setAxis('touch', 'throttle', 0)
-      if (gasIndicatorRef.current) {
-        gasIndicatorRef.current.style.top = '50%'
-        gasIndicatorRef.current.style.opacity = '0.3'
-      }
+  const resetGas = useCallback(() => {
+    gasTouchId.current = null
+    gasRect.current = null
+    input.setAxis('touch', 'throttle', 0)
+    if (gasIndicatorRef.current) {
+      gasIndicatorRef.current.style.top = '50%'
+      gasIndicatorRef.current.style.opacity = '0.3'
     }
   }, [input])
 
-  // Right side: horizontal steer slider
-  const updateSteer = useCallback((e: React.TouchEvent) => {
-    e.preventDefault()
-    const el = steerRef.current
-    if (!el) return
-    const rect = el.getBoundingClientRect()
-    let steer = 0
-    for (let i = 0; i < e.touches.length; i++) {
-      const t = e.touches[i]
-      if (t.clientX < rect.left || t.clientX > rect.right ||
-          t.clientY < rect.top || t.clientY > rect.bottom) continue
-      // Map X position: left = 1, center = 0, right = -1
-      const xRatio = (t.clientX - rect.left) / rect.width
-      steer = 1 - xRatio * 2
-      break
-    }
+  const applySteer = useCallback((clientX: number) => {
+    const rect = steerRect.current
+    if (!rect) return
+    const xRatio = (clientX - rect.left) / rect.width
+    const steer = Math.max(-1, Math.min(1, 1 - xRatio * 2))
     input.setAxis('touch', 'steer', steer)
     if (steerIndicatorRef.current) {
-      const pct = (1 - steer) / 2 * 100
+      const pct = Math.max(0, Math.min(100, (1 - steer) / 2 * 100))
       steerIndicatorRef.current.style.left = `${pct}%`
       steerIndicatorRef.current.style.opacity = '1'
     }
   }, [input])
 
-  const clearSteer = useCallback((e: React.TouchEvent) => {
+  const resetSteer = useCallback(() => {
+    steerTouchId.current = null
+    steerRect.current = null
+    input.setAxis('touch', 'steer', 0)
+    if (steerIndicatorRef.current) {
+      steerIndicatorRef.current.style.left = '50%'
+      steerIndicatorRef.current.style.opacity = '0.3'
+    }
+  }, [input])
+
+  // Global move/end listeners so we track fingers even outside the element
+  useEffect(() => {
+    const onMove = (e: TouchEvent) => {
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        const t = e.changedTouches[i]
+        if (t.identifier === gasTouchId.current) applyGas(t.clientY)
+        if (t.identifier === steerTouchId.current) applySteer(t.clientX)
+      }
+    }
+    const onEnd = (e: TouchEvent) => {
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        const t = e.changedTouches[i]
+        if (t.identifier === gasTouchId.current) resetGas()
+        if (t.identifier === steerTouchId.current) resetSteer()
+      }
+    }
+    document.addEventListener('touchmove', onMove, { passive: true })
+    document.addEventListener('touchend', onEnd)
+    document.addEventListener('touchcancel', onEnd)
+    return () => {
+      document.removeEventListener('touchmove', onMove)
+      document.removeEventListener('touchend', onEnd)
+      document.removeEventListener('touchcancel', onEnd)
+    }
+  }, [applyGas, applySteer, resetGas, resetSteer])
+
+  const onGasStart = useCallback((e: React.TouchEvent) => {
+    e.preventDefault()
+    const el = gasRef.current
+    if (!el) return
+    gasRect.current = el.getBoundingClientRect()
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      const t = e.changedTouches[i]
+      gasTouchId.current = t.identifier
+      applyGas(t.clientY)
+      break
+    }
+  }, [applyGas])
+
+  const onSteerStart = useCallback((e: React.TouchEvent) => {
     e.preventDefault()
     const el = steerRef.current
     if (!el) return
-    const rect = el.getBoundingClientRect()
-    let found = false
-    for (let i = 0; i < e.touches.length; i++) {
-      const t = e.touches[i]
-      if (t.clientX >= rect.left && t.clientX <= rect.right &&
-          t.clientY >= rect.top && t.clientY <= rect.bottom) {
-        found = true
-        break
-      }
+    steerRect.current = el.getBoundingClientRect()
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      const t = e.changedTouches[i]
+      steerTouchId.current = t.identifier
+      applySteer(t.clientX)
+      break
     }
-    if (!found) {
-      input.setAxis('touch', 'steer', 0)
-      if (steerIndicatorRef.current) {
-        steerIndicatorRef.current.style.left = '50%'
-        steerIndicatorRef.current.style.opacity = '0.3'
-      }
-    }
-  }, [input])
+  }, [applySteer])
 
   return (
     <>
@@ -135,8 +146,7 @@ export function AnalogTouchControls({ input }: AnalogTouchControlsProps) {
           width: 70,
           height: 200,
         }}
-        onTouchStart={updateGas} onTouchMove={updateGas}
-        onTouchEnd={clearGas} onTouchCancel={clearGas}
+        onTouchStart={onGasStart}
       >
         <div style={{
           position: 'absolute', left: 0, right: 0, top: '50%',
@@ -170,8 +180,7 @@ export function AnalogTouchControls({ input }: AnalogTouchControlsProps) {
           width: 200,
           height: 70,
         }}
-        onTouchStart={updateSteer} onTouchMove={updateSteer}
-        onTouchEnd={clearSteer} onTouchCancel={clearSteer}
+        onTouchStart={onSteerStart}
       >
         <div style={{
           position: 'absolute', top: 0, bottom: 0, left: '50%',

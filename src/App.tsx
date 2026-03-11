@@ -2,8 +2,7 @@ import { useState, useMemo } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { Physics } from '@react-three/rapier'
 import { FreePlayTerrain } from './levels/FreePlayTerrain'
-import { FamilyCar } from './vehicles/FamilyCar'
-import { Ball } from './vehicles/Ball'
+import { CAR_REGISTRY } from './vehicles/registry'
 import { GameCamera } from './components/GameCamera'
 import { HUD } from './components/HUD'
 import { AnalogTouchControls } from './components/AnalogTouchControls'
@@ -12,15 +11,14 @@ import { MainMenu } from './components/MainMenu'
 import { Level1 } from './levels/Level1'
 import { InputManager, useKeyboardInput } from './input'
 import { useGameStore } from './hooks/useGameStore'
-import { BasicCar } from './vehicles/BasicCar'
 
 type GameMode = 'menu' | 'level' | 'freeplay'
 
-function Vehicle({ input, debug }: { input: InputManager; debug: boolean }) {
-  const vehicleType = useGameStore((s) => s.vehicleType)
-  if (vehicleType === 'ball') return <Ball input={input} debug={debug} />
-  if (vehicleType === 'base') return <BasicCar input={input} debug={debug} />
-  return <FamilyCar input={input} debug={debug} />
+function Vehicle({ input }: { input: InputManager }) {
+  const vehicleId = useGameStore((s) => s.vehicleId)
+  const entry = CAR_REGISTRY.find((c) => c.id === vehicleId) ?? CAR_REGISTRY[0]
+  const Comp = entry.component
+  return <Comp input={input} />
 }
 
 function Game({ mode }: { mode: 'level' | 'freeplay' }) {
@@ -49,7 +47,7 @@ function Game({ mode }: { mode: 'level' | 'freeplay' }) {
         <fog attach="fog" args={['#b0d4f1', 200, 500]} />
         <Physics debug={debug} gravity={[0, -30, 0]}>
           {mode === 'level' ? <Level1 /> : <FreePlayTerrain />}
-          <Vehicle input={input} debug={debug} />
+          <Vehicle input={input} />
         </Physics>
         <GameCamera input={input} />
         <FpsTracker />
