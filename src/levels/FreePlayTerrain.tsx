@@ -3,6 +3,26 @@ import { useMemo } from 'react'
 import { RepeatWrapping, CanvasTexture } from 'three'
 import { Straight, LCurve, RCurve, RampUp, RampDown } from '../track-parts'
 import { useGameStore } from '../hooks/useGameStore'
+import { Coin } from '../components/Coin'
+
+function coinGrid(
+  center: [number, number, number],
+  size: number,
+  spacing: number = 2
+): [number, number, number][] {
+  const positions: [number, number, number][] = []
+  const offset = ((size - 1) * spacing) / 2
+  for (let row = 0; row < size; row++) {
+    for (let col = 0; col < size; col++) {
+      positions.push([
+        center[0] + col * spacing - offset,
+        center[1],
+        center[2] + row * spacing - offset,
+      ])
+    }
+  }
+  return positions
+}
 
 function useGridTexture() {
   return useMemo(() => {
@@ -47,14 +67,17 @@ export function FreePlayTerrain() {
       </RigidBody>
 
       {/* === Track with coins === */}
+      {coinGrid([0, 2, 50], 20).map((pos, i) => (
+        <Coin key={i} position={pos} />
+      ))}
 
       {/* Starting straights */}
-      <Straight position={[0, 0, 0]}  />
+      <Straight position={[0, 0, 0]} />
       <Straight position={[0, 0, -10]} coins="center" />
       <Straight position={[0, 0, -20]} coins="center" />
-      <Straight position={[0, 0, -30]} coins="left"  />
+      <Straight position={[0, 0, -30]} coins="left" />
       <Straight position={[0, 0, -40]} coins="left" />
-      <Straight position={[0, 0, -50]}  />
+      <Straight position={[0, 0, -50]} />
 
       {/* Ramp up */}
       <RampUp position={[0, 0, -55]} />
@@ -62,10 +85,10 @@ export function FreePlayTerrain() {
       {/* Elevated section */}
       <Straight position={[0, 6.105, -105]} />
       <RCurve position={[0, 6.105, -115]} coins="center" />
-      <Straight position={[37, 6.105, -139]} rotation={[0, Math.PI/2, 0]} coins="center" />
-      <RCurve position={[47, 6.105, -139]} rotation={[0, -Math.PI/2, 0]} coins="center" />
+      <Straight position={[37, 6.105, -139]} rotation={[0, Math.PI / 2, 0]} coins="center" />
+      <RCurve position={[47, 6.105, -139]} rotation={[0, -Math.PI / 2, 0]} coins="center" />
       <LCurve position={[71, 6.105, -115]} rotation={[0, Math.PI, 0]} coins="center" />
-      <RCurve position={[95, 6.105, -91]} rotation={[0, -Math.PI/2, 0]} coins="center" />
+      <RCurve position={[95, 6.105, -91]} rotation={[0, -Math.PI / 2, 0]} coins="center" />
 
       {/* Ramp down */}
       <RampDown position={[119, 6.105, -60]} rotation={[0, Math.PI, 0]} />

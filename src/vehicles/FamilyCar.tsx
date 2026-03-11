@@ -155,8 +155,8 @@ export const FamilyCar = ({ input, debug }: FamilyCarProps) => {
 
     const MAX_ANTI_ROLL_TORQUE = 30
     for (const [l, r] of [[0, 1], [2, 3]] as const) {
-      const lf = vc.wheelIsInContact(l) ? vc.wheelSuspensionForce(l) : 0
-      const rf = vc.wheelIsInContact(r) ? vc.wheelSuspensionForce(r) : 0
+      const lf = (vc.wheelIsInContact(l) ? vc.wheelSuspensionForce(l) : 0) ?? 0
+      const rf = (vc.wheelIsInContact(r) ? vc.wheelSuspensionForce(r) : 0) ?? 0
       const diff = MathUtils.clamp((rf - lf) * ANTI_ROLL_STIFFNESS, -MAX_ANTI_ROLL_TORQUE, MAX_ANTI_ROLL_TORQUE)
       if (Math.abs(diff) > 0.01) {
         rb.addTorque({ x: fwd.x * diff, y: fwd.y * diff, z: fwd.z * diff }, true)
@@ -184,9 +184,9 @@ export const FamilyCar = ({ input, debug }: FamilyCarProps) => {
       rl: vc.wheelIsInContact(2),
       rr: vc.wheelIsInContact(3),
       steerAngle: +steering.toFixed(2),
-      sideImp: [0,1,2,3].map(i => vc.wheelSideImpulse(i).toFixed(1)).join(','),
-      fwdImp: [0,1,2,3].map(i => vc.wheelForwardImpulse(i).toFixed(1)).join(','),
-      suspF: [0,1,2,3].map(i => vc.wheelSuspensionForce(i).toFixed(1)).join(','),
+      sideImp: [0,1,2,3].map(i => (vc.wheelSideImpulse(i) ?? 0).toFixed(1)).join(','),
+      fwdImp: [0,1,2,3].map(i => (vc.wheelForwardImpulse(i) ?? 0).toFixed(1)).join(','),
+      suspF: [0,1,2,3].map(i => (vc.wheelSuspensionForce(i) ?? 0).toFixed(1)).join(','),
     })
   })
 

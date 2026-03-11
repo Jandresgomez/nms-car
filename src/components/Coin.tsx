@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
-import { CylinderCollider, RigidBody } from '@react-three/rapier'
+import { BallCollider, RigidBody } from '@react-three/rapier'
 import { Group, DoubleSide, Object3D, InstancedMesh, Color } from 'three'
 import { useGameStore } from '../hooks/useGameStore'
 
@@ -10,8 +10,8 @@ const BOB_AMPLITUDE = 0.3
 const COIN_RADIUS = 0.8
 const COIN_THICKNESS = 0.15
 
-const PARTICLE_COUNT = 24
-const PARTICLE_LIFE = 0.8
+const PARTICLE_COUNT = 32
+const PARTICLE_LIFE = 1.0
 const COLORS = [new Color('#FFD700'), new Color('#FF6B6B'), new Color('#4ECDC4'), new Color('#45B7D1'), new Color('#FFFFFF')]
 
 interface Particle {
@@ -49,13 +49,14 @@ export function Coin({ position }: CoinProps) {
         if (p.age < PARTICLE_LIFE) {
           allDead = false
           const progress = p.age / PARTICLE_LIFE
-          p.vy -= 15 * dt
+          p.vy -= 9 * dt
           _obj.position.set(
             position[0] + p.vx * p.age,
             position[1] + p.vy * p.age,
             position[2] + p.vz * p.age,
           )
-          _obj.scale.setScalar(0.12 * (1 - progress))
+          const s = 0.15 * (1 - progress * progress)
+          _obj.scale.setScalar(s)
           _obj.updateMatrix()
           burstRef.current!.setMatrixAt(i, _obj.matrix)
         } else {
@@ -75,11 +76,11 @@ export function Coin({ position }: CoinProps) {
     addCoin()
     particles.current = Array.from({ length: PARTICLE_COUNT }, () => {
       const angle = Math.random() * Math.PI * 2
-      const speed = 3 + Math.random() * 4
+      const speed = 2 + Math.random() * 3
       return {
-        vx: Math.cos(angle) * speed * (0.5 + Math.random()),
-        vy: 4 + Math.random() * 4,
-        vz: Math.sin(angle) * speed * (0.5 + Math.random()),
+        vx: Math.cos(angle) * speed,
+        vy: 8 + Math.random() * 6,
+        vz: Math.sin(angle) * speed,
         age: 0,
       }
     })
@@ -104,7 +105,7 @@ export function Coin({ position }: CoinProps) {
             if (other.rigidBodyObject?.name === 'car') onCollect()
           }}
         >
-          <CylinderCollider args={[COIN_RADIUS, COIN_THICKNESS]} rotation={[0, 0, Math.PI / 2]} />
+          <BallCollider args={[COIN_RADIUS]} />
           <group ref={groupRef}>
             <mesh castShadow rotation={[0, 0, Math.PI / 2]}>
               <cylinderGeometry args={[COIN_RADIUS, COIN_RADIUS, COIN_THICKNESS, 24]} />

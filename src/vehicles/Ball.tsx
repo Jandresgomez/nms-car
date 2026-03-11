@@ -1,7 +1,7 @@
 import { useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { RigidBody, BallCollider, useRapier, type RapierRigidBody } from '@react-three/rapier'
-import { Vector3, Euler, Quaternion, MathUtils } from 'three'
+import { Vector3, Euler, Quaternion, MathUtils, Mesh } from 'three'
 import { Ray } from '@dimforge/rapier3d-compat'
 import { useDebugStore } from '../hooks/useDebugStore'
 import type { InputManager } from '../input/InputManager'
@@ -31,7 +31,7 @@ interface BallProps {
 
 export function Ball({ input, debug }: BallProps) {
   const body = useRef<RapierRigidBody>(null)
-  const meshRef = useRef<THREE.Mesh>(null)
+  const meshRef = useRef<Mesh>(null)
   const { camera } = useThree()
   const { world } = useRapier()
   const debugSet = useDebugStore((s) => s.set)
@@ -51,13 +51,13 @@ export function Ball({ input, debug }: BallProps) {
 
     // --- Ground check + surface normal ---
     const ray = new Ray({ x: pos.x, y: pos.y, z: pos.z }, { x: 0, y: -1, z: 0 })
-    const hit = world.castRay(ray, GROUND_RAY_LEN, true, undefined, undefined, undefined, rb)
+    const hit = world.castRay(ray, GROUND_RAY_LEN, true, 2, undefined, undefined, rb)
     const grounded = hit !== null && hit.timeOfImpact <= GROUND_RAY_LEN
 
     // Get surface normal when grounded
     _normal.set(0, 1, 0)
     if (grounded && hit !== null) {
-      const collider = world.getCollider(hit.colliderHandle)
+      const collider = hit.collider
       if (collider) {
         const n = ray.pointAt(hit.timeOfImpact)
         const normal = collider.castRayAndGetNormal(ray, GROUND_RAY_LEN, true)

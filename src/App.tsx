@@ -6,18 +6,20 @@ import { FamilyCar } from './vehicles/FamilyCar'
 import { Ball } from './vehicles/Ball'
 import { GameCamera } from './components/GameCamera'
 import { HUD } from './components/HUD'
-import { TouchControls } from './components/TouchControls'
+import { AnalogTouchControls } from './components/AnalogTouchControls'
 import { DebugOverlay, FpsTracker } from './components/DebugOverlay'
 import { MainMenu } from './components/MainMenu'
 import { Level1 } from './levels/Level1'
 import { InputManager, useKeyboardInput } from './input'
 import { useGameStore } from './hooks/useGameStore'
+import { BasicCar } from './vehicles/BasicCar'
 
 type GameMode = 'menu' | 'level' | 'freeplay'
 
 function Vehicle({ input, debug }: { input: InputManager; debug: boolean }) {
   const vehicleType = useGameStore((s) => s.vehicleType)
   if (vehicleType === 'ball') return <Ball input={input} debug={debug} />
+  if (vehicleType === 'base') return <BasicCar input={input} debug={debug} />
   return <FamilyCar input={input} debug={debug} />
 }
 
@@ -45,7 +47,7 @@ function Game({ mode }: { mode: 'level' | 'freeplay' }) {
         />
         <hemisphereLight args={['#87CEEB', '#556B2F', 0.6]} />
         <fog attach="fog" args={['#b0d4f1', 200, 500]} />
-        <Physics debug={debug} gravity={[0, -15, 0]}>
+        <Physics debug={debug} gravity={[0, -30, 0]}>
           {mode === 'level' ? <Level1 /> : <FreePlayTerrain />}
           <Vehicle input={input} debug={debug} />
         </Physics>
@@ -54,7 +56,7 @@ function Game({ mode }: { mode: 'level' | 'freeplay' }) {
       </Canvas>
       <HUD />
       <DebugOverlay debug={debug} onToggleDebug={toggleDebug} />
-      <TouchControls input={input} />
+      <AnalogTouchControls input={input} />
     </>
   )
 }

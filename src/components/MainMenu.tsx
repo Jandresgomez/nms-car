@@ -1,12 +1,20 @@
 import { Canvas, useFrame } from '@react-three/fiber'
 import { useRef, useState } from 'react'
 import { useGLTF } from '@react-three/drei'
-import type { Group } from 'three'
+import { CylinderGeometry, type Group } from 'three'
 import { useGameStore, type VehicleType } from '../hooks/useGameStore'
 
 const VEHICLES: { type: VehicleType; label: string; emoji: string }[] = [
   { type: 'car', label: 'Family Car', emoji: '🚗' },
   { type: 'ball', label: 'Ball', emoji: '⚽' },
+  { type: 'base', label: 'Basic', emoji: '🚗' },
+]
+
+const WHEEL_POSITIONS = [
+  { x: -1.3, y: -0.5, z: -1.5 },
+  { x: 1.3, y: -0.5, z: -1.5 },
+  { x: -1.3, y: -0.5, z: 1.5 },
+  { x: 1.3, y: -0.5, z: 1.5 },
 ]
 
 function RotatingPreview({ vehicleType }: { vehicleType: VehicleType }) {
@@ -23,6 +31,30 @@ function RotatingPreview({ vehicleType }: { vehicleType: VehicleType }) {
         <mesh>
           <sphereGeometry args={[1, 32, 32]} />
           <meshStandardMaterial color="#ff6b35" metalness={0.4} roughness={0.3} />
+        </mesh>
+      </group>
+    )
+  }
+
+  if (vehicleType === 'base') {
+    return (
+      <group ref={groupRef} position={[0, 0, 0]} scale={0.5}>
+        <mesh>
+          <mesh position={[0, -0.3, 0]}>
+            <boxGeometry args={[2.8, 1, 4]} />
+            <meshStandardMaterial color="crimson" />
+          </mesh>
+          {WHEEL_POSITIONS.map((wheelPos, i) => (
+            <group
+              key={i}
+              position={[wheelPos.x, wheelPos.y - 0.4, wheelPos.z]}
+            >
+              <lineSegments rotation={[0, 0, Math.PI / 2]}>
+                <edgesGeometry args={[new CylinderGeometry(0.8, 0.8, 0.3, 16)]} />
+                <lineBasicMaterial color="white" />
+              </lineSegments>
+            </group>
+          ))}
         </mesh>
       </group>
     )

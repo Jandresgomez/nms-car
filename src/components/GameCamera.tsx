@@ -121,13 +121,14 @@ export function GameCamera({ input }: GameCameraProps) {
 
     const actions = input.getState()
     const driving = actions.forward || actions.backward || actions.left || actions.right
+    const locked = useGameStore.getState().cameraLocked
 
     const targetPos = new Vector3()
     target.getWorldPosition(targetPos)
 
     if (vehicleType === 'ball') {
       // Ball: pure orbit camera — no yaw snapping, free orbit always
-      if (driving) {
+      if (driving && !locked) {
         const snapFactor = 1 - Math.exp(-SNAP_SPEED * 0.3 * delta)
         zoom.current += (DEFAULT_ZOOM - zoom.current) * snapFactor
       }
@@ -143,7 +144,7 @@ export function GameCamera({ input }: GameCameraProps) {
       smoothLook.current.lerp(desiredLook, 0.12)
     } else {
       // Car: yaw-follow camera
-      if (driving) {
+      if (driving && !locked) {
         const snapFactor = 1 - Math.exp(-SNAP_SPEED * delta)
         orbitYaw.current *= (1 - snapFactor)
         orbitPitch.current *= (1 - snapFactor)

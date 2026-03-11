@@ -180,7 +180,7 @@ export function HotRod({ input, debug }: HotRodProps) {
       const rayLen = SUSPENSION_MAX_LENGTH + wheelRadius
       const hit = world.castRay(
         new Ray({ x: _wheelWorld.x, y: _wheelWorld.y, z: _wheelWorld.z }, { x: _localDown.x, y: _localDown.y, z: _localDown.z }),
-        rayLen, true, undefined, undefined, undefined, body.current!,
+        rayLen, true, 2, undefined, undefined, body.current!,
       )
 
       if (hit !== null && hit.timeOfImpact <= rayLen) {
