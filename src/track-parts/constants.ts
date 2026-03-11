@@ -17,7 +17,7 @@
  *   RampDown:  5.0w x 2.4h  x 15.6l  — decline going forward
  */
 
-export const TRACK_SCALE = 4
+export const TRACK_SCALE = 5
 
 /** Scaled dimensions for positioning math */
 export const TILE = {
@@ -26,9 +26,9 @@ export const TILE = {
   /** Straight piece width along X */
   straightWidth: 4.94 * TRACK_SCALE,
   /** Curve bounding size (square) */
-  curveSize: 12.71 * TRACK_SCALE,
+  curveSize: 12.46 * TRACK_SCALE,
   /** Ramp length along Z */
-  rampLength: 15.57 * TRACK_SCALE,
+  rampLength: 12.4 * TRACK_SCALE,
   /** Ramp peak height */
-  rampHeight: 2.39 * TRACK_SCALE,
+  rampHeight: 2.035 * TRACK_SCALE,
 } as const

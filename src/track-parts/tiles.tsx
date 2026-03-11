@@ -6,7 +6,7 @@ import { Coin } from '../components/Coin'
 import { TRACK_SCALE } from './constants'
 import { useGameStore } from '../hooks/useGameStore'
 
-const COIN_Y = 1.5 / TRACK_SCALE // coin height in local (pre-scale) space
+const COIN_Y = 2.5 / TRACK_SCALE // coin height in local (pre-scale) space
 
 const STRAIGHT_COINS = {
   center: [[0, 0]] as [number, number][],

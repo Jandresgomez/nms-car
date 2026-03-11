@@ -8,7 +8,7 @@ import { Coin } from '../components/Coin'
 /** Shorthand aliases – every position is now a multiple of tile dimensions */
 const S = TILE.straightLength  // straight piece spacing along Z
 const C = TILE.curveSize       // curve bounding box (square)
-const R = TILE.rampLength      // ramp length along Z
+const R = TILE.rampLength     // ramp length along Z
 const RH = TILE.rampHeight     // ramp peak height
 
 function coinGrid(
@@ -62,7 +62,7 @@ export function FreePlayTerrain() {
   const debug = useGameStore((s) => s.debug)
 
   // Precompute key Y / Z anchors from tile dimensions
-  const rampStartZ = -6 * S          // Z where ramp begins (after 6 straights)
+  const rampStartZ = -5.5 * S          // Z where ramp begins (after 6 straights)
   const rampEndZ = rampStartZ - R    // Z where ramp ends (elevated section starts)
   const elevY = RH                   // elevated section Y
 
@@ -79,7 +79,7 @@ export function FreePlayTerrain() {
 
   // Ramp down origin: continues from rc3 exit
   const rampDownX = rc3X + C - S
-  const rampDownZ = rc3Z + R         // ramp goes +Z (rotated 180°)
+  const rampDownZ = rc3Z + R - S * 0.5         // ramp goes +Z (rotated 180°)
 
   // Return straights at ground level, same X as ramp down exit
   const returnX = rampDownX
@@ -123,6 +123,8 @@ export function FreePlayTerrain() {
       <RampDown position={[rampDownX, elevY, rampDownZ]} rotation={[0, Math.PI, 0]} />
 
       {/* Return straights */}
+      <Straight position={[returnX, 0, -3 * S]} rotation={[0, Math.PI, 0]} />
+      <Straight position={[returnX, 0, -2 * S]} rotation={[0, Math.PI, 0]} />
       <Straight position={[returnX, 0, -1 * S]} rotation={[0, Math.PI, 0]} coins="center" />
       <Straight position={[returnX, 0, 0]} rotation={[0, Math.PI, 0]} coins="center" />
       <Straight position={[returnX, 0, 1 * S]} rotation={[0, Math.PI, 0]} coins="center" />

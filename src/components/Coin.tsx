@@ -7,8 +7,8 @@ import { useGameStore } from '../hooks/useGameStore'
 const ROTATION_PERIOD = 10
 const BOB_PERIOD = 8
 const BOB_AMPLITUDE = 0.3
-const COIN_RADIUS = 0.8
-const COIN_THICKNESS = 0.15
+const COIN_RADIUS = 1.5
+const COIN_THICKNESS = 0.4
 
 const PARTICLE_COUNT = 32
 const PARTICLE_LIFE = 1.0
