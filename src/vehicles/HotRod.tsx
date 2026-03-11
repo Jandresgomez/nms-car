@@ -78,7 +78,7 @@ const WHEEL_GROUPS = [
 ]
 const WHEEL_RADIUS = 0.004 // model-local radius (approx from GLB bounds)
 
-interface CarProps {
+interface HotRodProps {
   input: InputManager
   debug?: boolean
 }
@@ -91,7 +91,7 @@ const _wpos = new Vector3()
 const _obj = new Object3D()
 const _spinAxis = new Vector3(1, 0, 0)
 
-export function Car({ input, debug }: CarProps) {
+export function HotRod({ input, debug }: HotRodProps) {
   const body = useRef<RapierRigidBody>(null)
   const smokeRef = useRef<InstancedMesh>(null)
   const debugSet = useDebugStore((s) => s.set)

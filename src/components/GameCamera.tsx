@@ -1,10 +1,14 @@
 import { useFrame, useThree } from '@react-three/fiber'
 import { useRef, useEffect } from 'react'
 import { Vector3, Quaternion, Euler } from 'three'
+import { useGameStore } from '../hooks/useGameStore'
 import type { InputManager } from '../input/InputManager'
 
-const BEHIND = new Vector3(0, 6, 12)
-const LOOK_AHEAD = new Vector3(0, 1, -10)
+const CAR_BEHIND = new Vector3(0, 6, 12)
+const CAR_LOOK_AHEAD = new Vector3(0, 1, -10)
+const BALL_BEHIND = new Vector3(0, 5, 10)
+const BALL_LOOK_AHEAD = new Vector3(0, 0.5, 0)
+
 const SNAP_SPEED = 3
 const MIN_ZOOM = 0.4
 const MAX_ZOOM = 2.5
@@ -110,39 +114,59 @@ export function GameCamera({ input }: GameCameraProps) {
   }, [gl])
 
   useFrame((state, delta) => {
-    const car = scene.getObjectByName('car')
-    if (!car) return
+    const vehicleType = useGameStore.getState().vehicleType
+    const targetName = vehicleType === 'ball' ? 'ball' : 'car'
+    const target = scene.getObjectByName(targetName)
+    if (!target) return
 
     const actions = input.getState()
     const driving = actions.forward || actions.backward || actions.left || actions.right
 
-    if (driving) {
-      const snapFactor = 1 - Math.exp(-SNAP_SPEED * delta)
-      orbitYaw.current *= (1 - snapFactor)
-      orbitPitch.current *= (1 - snapFactor)
-      zoom.current += (DEFAULT_ZOOM - zoom.current) * snapFactor
+    const targetPos = new Vector3()
+    target.getWorldPosition(targetPos)
+
+    if (vehicleType === 'ball') {
+      // Ball: pure orbit camera — no yaw snapping, free orbit always
+      if (driving) {
+        const snapFactor = 1 - Math.exp(-SNAP_SPEED * 0.3 * delta)
+        zoom.current += (DEFAULT_ZOOM - zoom.current) * snapFactor
+      }
+
+      const orbitQuat = new Quaternion().setFromEuler(
+        new Euler(orbitPitch.current, orbitYaw.current, 0, 'YXZ')
+      )
+
+      const desiredPos = BALL_BEHIND.clone().multiplyScalar(zoom.current).applyQuaternion(orbitQuat).add(targetPos)
+      const desiredLook = BALL_LOOK_AHEAD.clone().add(targetPos)
+
+      smoothPos.current.lerp(desiredPos, 0.08)
+      smoothLook.current.lerp(desiredLook, 0.12)
+    } else {
+      // Car: yaw-follow camera
+      if (driving) {
+        const snapFactor = 1 - Math.exp(-SNAP_SPEED * delta)
+        orbitYaw.current *= (1 - snapFactor)
+        orbitPitch.current *= (1 - snapFactor)
+        zoom.current += (DEFAULT_ZOOM - zoom.current) * snapFactor
+      }
+
+      const carQuat = new Quaternion()
+      target.getWorldQuaternion(carQuat)
+
+      const euler = new Euler().setFromQuaternion(carQuat, 'YXZ')
+      const yawOnlyQuat = new Quaternion().setFromEuler(new Euler(0, euler.y, 0, 'YXZ'))
+
+      const orbitQuat = new Quaternion().setFromEuler(
+        new Euler(orbitPitch.current, orbitYaw.current, 0, 'YXZ')
+      )
+      const combinedQuat = yawOnlyQuat.multiply(orbitQuat)
+
+      const desiredPos = CAR_BEHIND.clone().multiplyScalar(zoom.current).applyQuaternion(combinedQuat).add(targetPos)
+      const desiredLook = CAR_LOOK_AHEAD.clone().applyQuaternion(combinedQuat).add(targetPos)
+
+      smoothPos.current.lerp(desiredPos, 0.08)
+      smoothLook.current.lerp(desiredLook, 0.12)
     }
-
-    const carPos = new Vector3()
-    car.getWorldPosition(carPos)
-
-    const carQuat = new Quaternion()
-    car.getWorldQuaternion(carQuat)
-
-    // Extract yaw only — ignore pitch/roll so camera doesn't flip with the car
-    const euler = new Euler().setFromQuaternion(carQuat, 'YXZ')
-    const yawOnlyQuat = new Quaternion().setFromEuler(new Euler(0, euler.y, 0, 'YXZ'))
-
-    const orbitQuat = new Quaternion().setFromEuler(
-      new Euler(orbitPitch.current, orbitYaw.current, 0, 'YXZ')
-    )
-    const combinedQuat = yawOnlyQuat.multiply(orbitQuat)
-
-    const desiredPos = BEHIND.clone().multiplyScalar(zoom.current).applyQuaternion(combinedQuat).add(carPos)
-    const desiredLook = LOOK_AHEAD.clone().applyQuaternion(combinedQuat).add(carPos)
-
-    smoothPos.current.lerp(desiredPos, 0.08)
-    smoothLook.current.lerp(desiredLook, 0.12)
 
     state.camera.position.copy(smoothPos.current)
     state.camera.lookAt(smoothLook.current)

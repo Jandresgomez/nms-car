@@ -1,17 +1,37 @@
 import { Canvas, useFrame } from '@react-three/fiber'
 import { useRef, useState } from 'react'
-import type { Mesh } from 'three'
+import { useGLTF } from '@react-three/drei'
+import type { Group } from 'three'
+import { useGameStore, type VehicleType } from '../hooks/useGameStore'
 
-function RotatingCar() {
-  const ref = useRef<Mesh>(null)
+const VEHICLES: { type: VehicleType; label: string; emoji: string }[] = [
+  { type: 'car', label: 'Family Car', emoji: '🚗' },
+  { type: 'ball', label: 'Ball', emoji: '⚽' },
+]
+
+function RotatingPreview({ vehicleType }: { vehicleType: VehicleType }) {
+  const groupRef = useRef<Group>(null)
+  const { scene } = useGLTF('/cars/family-car.glb')
+
   useFrame((_, delta) => {
-    if (ref.current) ref.current.rotation.y += delta * 0.4
+    if (groupRef.current) groupRef.current.rotation.y += delta * 0.4
   })
+
+  if (vehicleType === 'ball') {
+    return (
+      <group ref={groupRef} position={[0, 0, 0]}>
+        <mesh>
+          <sphereGeometry args={[1, 32, 32]} />
+          <meshStandardMaterial color="#ff6b35" metalness={0.4} roughness={0.3} />
+        </mesh>
+      </group>
+    )
+  }
+
   return (
-    <mesh ref={ref} position={[0, -0.5, 0]}>
-      <boxGeometry args={[2, 0.8, 4]} />
-      <meshStandardMaterial color="#e63946" metalness={0.6} roughness={0.3} />
-    </mesh>
+    <group ref={groupRef} position={[0, -0.3, 0]}>
+      <primitive object={scene.clone()} scale={0.5} rotation={[0, Math.PI, 0]} />
+    </group>
   )
 }
 
@@ -30,7 +50,7 @@ const btnBase: React.CSSProperties = {
   letterSpacing: '0.15em',
 }
 
-function MenuButton({ label, onClick }: { label: string; onClick: () => void }) {
+function MenuButton({ label, onClick, style }: { label: string; onClick: () => void; style?: React.CSSProperties }) {
   const [hovered, setHovered] = useState(false)
   return (
     <button
@@ -40,6 +60,7 @@ function MenuButton({ label, onClick }: { label: string; onClick: () => void }) 
       style={{
         ...btnBase,
         background: hovered ? '#e63946' : 'rgba(230,57,70,0.3)',
+        ...style,
       }}
     >
       {label}
@@ -48,6 +69,16 @@ function MenuButton({ label, onClick }: { label: string; onClick: () => void }) 
 }
 
 export function MainMenu({ onStart, onFreePlay }: { onStart: () => void; onFreePlay: () => void }) {
+  const { vehicleType, setVehicleType } = useGameStore()
+
+  const cycleVehicle = (dir: number) => {
+    const idx = VEHICLES.findIndex((v) => v.type === vehicleType)
+    const next = (idx + dir + VEHICLES.length) % VEHICLES.length
+    setVehicleType(VEHICLES[next].type)
+  }
+
+  const current = VEHICLES.find((v) => v.type === vehicleType)!
+
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
       <Canvas camera={{ position: [0, 3, 8], fov: 45 }}>
@@ -55,7 +86,7 @@ export function MainMenu({ onStart, onFreePlay }: { onStart: () => void; onFreeP
         <ambientLight intensity={0.3} />
         <directionalLight position={[5, 5, 5]} intensity={1} />
         <fog attach="fog" args={['#0a0a1a', 10, 20]} />
-        <RotatingCar />
+        <RotatingPreview vehicleType={vehicleType} />
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1, 0]}>
           <planeGeometry args={[50, 50]} />
           <meshStandardMaterial color="#1a1a2e" />
@@ -64,27 +95,53 @@ export function MainMenu({ onStart, onFreePlay }: { onStart: () => void; onFreeP
 
       <div
         style={{
-          position: 'absolute',
-          inset: 0,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
+          position: 'absolute', inset: 0,
+          display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center',
           pointerEvents: 'none',
         }}
       >
         <h1
           style={{
-            color: '#fff',
-            fontFamily: 'monospace',
+            color: '#fff', fontFamily: 'monospace',
             fontSize: 'clamp(2rem, 6vw, 4rem)',
             textShadow: '0 0 20px rgba(230,57,70,0.8)',
-            marginBottom: '0.5em',
-            letterSpacing: '0.1em',
+            marginBottom: '0.5em', letterSpacing: '0.1em',
           }}
         >
           NO MAN'S LAND
         </h1>
+
+        {/* Vehicle selector */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 16,
+          marginBottom: 24, pointerEvents: 'auto',
+        }}>
+          <button onClick={() => cycleVehicle(-1)} style={{
+            ...btnBase, padding: '10px 18px', border: '2px solid rgba(255,255,255,0.3)',
+            fontSize: 'clamp(1.2rem, 3vw, 1.8rem)',
+          }}>
+            ◀
+          </button>
+          <div style={{
+            color: '#fff', fontFamily: 'monospace', textAlign: 'center',
+            minWidth: 160,
+          }}>
+            <div style={{ fontSize: 'clamp(2rem, 5vw, 3rem)' }}>{current.emoji}</div>
+            <div style={{
+              fontSize: 'clamp(0.9rem, 2.5vw, 1.2rem)',
+              letterSpacing: '0.1em', textTransform: 'uppercase',
+            }}>
+              {current.label}
+            </div>
+          </div>
+          <button onClick={() => cycleVehicle(1)} style={{
+            ...btnBase, padding: '10px 18px', border: '2px solid rgba(255,255,255,0.3)',
+            fontSize: 'clamp(1.2rem, 3vw, 1.8rem)',
+          }}>
+            ▶
+          </button>
+        </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <MenuButton label="Start" onClick={onStart} />
@@ -93,10 +150,8 @@ export function MainMenu({ onStart, onFreePlay }: { onStart: () => void; onFreeP
 
         <p
           style={{
-            color: 'rgba(255,255,255,0.4)',
-            fontFamily: 'monospace',
-            fontSize: 'clamp(0.7rem, 2vw, 0.9rem)',
-            marginTop: '2em',
+            color: 'rgba(255,255,255,0.4)', fontFamily: 'monospace',
+            fontSize: 'clamp(0.7rem, 2vw, 0.9rem)', marginTop: '2em',
           }}
         >
           WASD / Arrows / Touch to drive
@@ -105,3 +160,5 @@ export function MainMenu({ onStart, onFreePlay }: { onStart: () => void; onFreeP
     </div>
   )
 }
+
+useGLTF.preload('/cars/family-car.glb')

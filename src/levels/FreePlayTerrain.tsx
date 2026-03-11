@@ -2,6 +2,7 @@ import { RigidBody, CuboidCollider } from '@react-three/rapier'
 import { useMemo } from 'react'
 import { RepeatWrapping, CanvasTexture } from 'three'
 import { Straight, LCurve, RCurve, RampUp, RampDown } from '../track-parts'
+import { useGameStore } from '../hooks/useGameStore'
 
 function useGridTexture() {
   return useMemo(() => {
@@ -32,15 +33,16 @@ function useGridTexture() {
 
 export function FreePlayTerrain() {
   const gridTex = useGridTexture()
+  const debug = useGameStore((s) => s.debug)
 
   return (
     <>
       {/* Ground */}
       <RigidBody type="fixed" friction={0.5} restitution={0}>
-        <CuboidCollider args={[150, 5, 150]} position={[0, -5, 0]} />
-        <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
-          <planeGeometry args={[300, 300]} />
-          <meshStandardMaterial map={gridTex} />
+        <CuboidCollider args={[250, 0.25, 250]} position={[0, -0.25, 0]} />
+        <mesh receiveShadow position={[0, -0.25, 0]}>
+          <boxGeometry args={[500, 0.5, 500]} />
+          <meshStandardMaterial map={gridTex} transparent={debug} opacity={debug ? 0.25 : 1} />
         </mesh>
       </RigidBody>
 

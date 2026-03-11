@@ -1,13 +1,13 @@
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo } from 'react'
 import { Canvas } from '@react-three/fiber'
-import { Sky } from '@react-three/drei'
 import { Physics } from '@react-three/rapier'
-import { FreePlayTerrain } from './components/FreePlayTerrain'
-import { Car } from './vehicles/Car'
+import { FreePlayTerrain } from './levels/FreePlayTerrain'
+import { FamilyCar } from './vehicles/FamilyCar'
+import { Ball } from './vehicles/Ball'
 import { GameCamera } from './components/GameCamera'
 import { HUD } from './components/HUD'
 import { TouchControls } from './components/TouchControls'
-import { DebugOverlay } from './components/DebugOverlay'
+import { DebugOverlay, FpsTracker } from './components/DebugOverlay'
 import { MainMenu } from './components/MainMenu'
 import { Level1 } from './levels/Level1'
 import { InputManager, useKeyboardInput } from './input'
@@ -15,10 +15,16 @@ import { useGameStore } from './hooks/useGameStore'
 
 type GameMode = 'menu' | 'level' | 'freeplay'
 
+function Vehicle({ input, debug }: { input: InputManager; debug: boolean }) {
+  const vehicleType = useGameStore((s) => s.vehicleType)
+  if (vehicleType === 'ball') return <Ball input={input} debug={debug} />
+  return <FamilyCar input={input} debug={debug} />
+}
+
 function Game({ mode }: { mode: 'level' | 'freeplay' }) {
   const input = useMemo(() => new InputManager(), [])
-  const [debug, setDebug] = useState(false)
-  const toggleDebug = useCallback(() => setDebug((d) => !d), [])
+  const debug = useGameStore((s) => s.debug)
+  const toggleDebug = useGameStore((s) => s.toggleDebug)
   useKeyboardInput(input)
 
   return (
@@ -41,9 +47,10 @@ function Game({ mode }: { mode: 'level' | 'freeplay' }) {
         <fog attach="fog" args={['#b0d4f1', 200, 500]} />
         <Physics debug={debug} gravity={[0, -15, 0]}>
           {mode === 'level' ? <Level1 /> : <FreePlayTerrain />}
-          <Car input={input} debug={debug} />
+          <Vehicle input={input} debug={debug} />
         </Physics>
         <GameCamera input={input} />
+        <FpsTracker />
       </Canvas>
       <HUD />
       <DebugOverlay debug={debug} onToggleDebug={toggleDebug} />

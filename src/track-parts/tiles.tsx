@@ -4,6 +4,7 @@ import { RigidBody, CuboidCollider, TrimeshCollider } from '@react-three/rapier'
 import * as THREE from 'three'
 import { Coin } from '../components/Coin'
 import { TRACK_SCALE } from './constants'
+import { useGameStore } from '../hooks/useGameStore'
 
 const COIN_Y = 1.5 / TRACK_SCALE // coin height in local (pre-scale) space
 
@@ -108,6 +109,20 @@ const Tile = ({
 }: TileProps) => {
   const { scene } = useGLTF(TILE_URLS[tile])
   const { visualScene, cuboids, trimeshes } = useTileParts(scene)
+  const debug = useGameStore((s) => s.debug)
+
+  // Apply opacity when debug colliders are shown
+  useMemo(() => {
+    visualScene.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh) {
+        const mesh = child as THREE.Mesh
+        const mat = mesh.material as THREE.MeshStandardMaterial
+        if (!mat.userData.originalOpacity) mat.userData.originalOpacity = mat.opacity
+        mat.transparent = debug
+        mat.opacity = debug ? 0.25 : mat.userData.originalOpacity
+      }
+    })
+  }, [visualScene, debug])
 
   return (
     <group position={position} rotation={rotation}>
