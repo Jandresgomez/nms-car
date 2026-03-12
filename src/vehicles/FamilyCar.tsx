@@ -6,6 +6,7 @@ import { useGameStore } from '../hooks/useGameStore'
 
 const PHYSICS: CarPhysicsOverrides = {
   driveForce: 700,
+  maxSteerAngle: Math.PI / 10
 }
 
 // Visual mapping: how the GLB model fits over the physics chassis

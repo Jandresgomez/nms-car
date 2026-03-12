@@ -15,6 +15,7 @@ export interface WheelState {
 // ── Physics overrides per car skin ───────────────────────────────
 export interface CarPhysicsOverrides {
     driveForce?: number
+    maxSteerAngle?: number
     frontLateralGrip?: number
     rearLateralGrip?: number
     rollingResistance?: number

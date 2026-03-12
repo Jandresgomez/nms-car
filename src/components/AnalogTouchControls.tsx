@@ -177,8 +177,8 @@ export function AnalogTouchControls({ input }: AnalogTouchControlsProps) {
         style={{
           ...zoneBase,
           right: 'calc(20px + env(safe-area-inset-right))',
-          width: 200,
-          height: 70,
+          width: '30vw',
+          height: '10vh',
         }}
         onTouchStart={onSteerStart}
       >
@@ -200,7 +200,7 @@ export function AnalogTouchControls({ input }: AnalogTouchControlsProps) {
         }}>▶</div>
         <div ref={steerIndicatorRef} style={{
           ...indicatorBase,
-          width: 40, height: 40,
+          width: '8vh', height: '8vh',
           left: '50%', top: '50%',
           transform: 'translate(-50%, -50%)',
           opacity: 0.3,

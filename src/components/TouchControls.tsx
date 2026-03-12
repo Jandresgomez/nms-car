@@ -114,7 +114,7 @@ export function TouchControls({ input }: TouchControlsProps) {
           position: 'fixed',
           bottom: 'calc(30px + env(safe-area-inset-bottom))',
           right: 'calc(20px + env(safe-area-inset-right))',
-          width: '35vw', height: 70, ...btnBase, padding: 0, overflow: 'hidden',
+          width: '50vw', height: 70, ...btnBase, padding: 0, overflow: 'hidden',
         }}
         onTouchStart={updateSteer} onTouchMove={updateSteer}
         onTouchEnd={clearSteer} onTouchCancel={clearSteer}

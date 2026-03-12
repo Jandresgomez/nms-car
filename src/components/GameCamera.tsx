@@ -10,8 +10,8 @@ const BALL_BEHIND = new Vector3(0, 5, 10)
 const BALL_LOOK_AHEAD = new Vector3(0, 0.5, 0)
 
 const SNAP_SPEED = 3
-const MIN_ZOOM = 0.4
-const MAX_ZOOM = 2.5
+const MIN_ZOOM = 1
+const MAX_ZOOM = 5
 const DEFAULT_ZOOM = 1
 
 interface GameCameraProps {

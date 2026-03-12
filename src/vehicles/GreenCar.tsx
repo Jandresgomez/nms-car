@@ -5,7 +5,8 @@ import type { InputManager } from '../input/InputManager'
 import { useGameStore } from '../hooks/useGameStore'
 
 const PHYSICS: CarPhysicsOverrides = {
-  driveForce: 1000,
+  driveForce: 1500,
+  maxSteerAngle: Math.PI / 20
 }
 
 // Visual mapping: how the GLB model fits over the physics chassis
